@@ -119,7 +119,8 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-
+find_package(Eigen3  REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/visualization.cpp
