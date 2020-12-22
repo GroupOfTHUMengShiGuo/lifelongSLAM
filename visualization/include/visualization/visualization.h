@@ -11,7 +11,12 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <Eigen/Dense>
+#include <glog/logging.h>
+#include "ndt_view_msgs/NDTView.h"
+#include "ndt_view_msgs/NDTViewArray.h"
 
 namespace visualization
 {
@@ -22,13 +27,13 @@ namespace NDT
 class NormalDistributionTransformVisualization
 {
 public:
-
     /**
      * \brief get ellipsoid array from topic.
      * param[in] 
      * param[out] ros MarkerArray message.
      */
-    void EllipsoidArrayCallback (const sensor_msgs::PointCloud2ConstPtr& pc2);
+    void SphereArrayCallback (const ndt_view_msgs::NDTViewArray& pc2);
+    // void SphereArrayCallback (const sensor_msgs::PointCloud2ConstPtr& pc2);
 
     /**
      * \brief default constructor
@@ -43,11 +48,12 @@ public:
     ~NormalDistributionTransformVisualization();
 
 private:
-
-    ros::Subscriber sub_ellipsoid_;
-
+    /**
+     * \brief topic publisher and subscriber
+     */
+    ros::Subscriber sub_sphere_;
+    ros::Publisher pub_sphere_;
 };
-
 
 }
 
