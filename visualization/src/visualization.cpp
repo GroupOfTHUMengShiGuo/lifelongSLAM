@@ -33,7 +33,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
   for (int i = 0; i < msg.leaves.size(); ++i) {
     if (msg.leaves[i].covs.size() == 9) {
       for (int j = 0; j < msg.leaves[i].covs.size(); ++j) {
-        ndt_cov_mat << msg.leaves[i].covs[j];
+        ndt_cov_mat(j/3,j%2) = msg.leaves[i].covs[j];
       }
     } else {
       std::cerr << "ERROR: Wrong covirance dimention" << std::endl;
@@ -41,7 +41,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     }
     if (msg.leaves[i].position.size() == 3) {
       for (int j = 0; j < msg.leaves[i].position.size(); ++j) {
-        ndt_view_position << msg.leaves[i].position[j];
+        ndt_view_position[j] = msg.leaves[i].position[j];
       }
     } else {
       std::cerr << "ERROR: Wrong position dimention" << std::endl;
@@ -74,13 +74,13 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       sphere_temp.scale.x = eigen_val[2];
       sphere_temp.scale.y = eigen_val[1];
       sphere_temp.scale.z = eigen_val[0];
-      sphere_temp.color.r = 1;
-      sphere_temp.color.g = 0;
-      sphere_temp.color.b = 0;
+      sphere_temp.color.r = 10;
+      sphere_temp.color.g = 10;
+      sphere_temp.color.b = 10;
       sphere_temp.color.a = 0.5;
-      sphere_temp.pose.position.x = 0;//ndt_view_position[0];
-      sphere_temp.pose.position.y = 0;//ndt_view_position[1];
-      sphere_temp.pose.position.z = 0;//ndt_view_position[2];
+      sphere_temp.pose.position.x = ndt_view_position[0];
+      sphere_temp.pose.position.y = ndt_view_position[1];
+      sphere_temp.pose.position.z = ndt_view_position[2];
       sphere_array.markers.push_back(sphere_temp);
     } else {
       std::cout << "Can't compute eigen values" << std::endl;
