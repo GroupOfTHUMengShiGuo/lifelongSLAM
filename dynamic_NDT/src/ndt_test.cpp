@@ -129,7 +129,6 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) / ori_sum * 100;
   cout << "diff = " << diff_sum << "%" << endl;
   //更新上一帧和本帧位姿
-  cout << "0 "<<endl;
   T_last=T_now;
   T_last_ori=T_now_ori;
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
@@ -140,7 +139,6 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud, ndt_ori.getFinalTransformation());
   pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori, ndt_ori.getFinalTransformation());
-  cout << "1 "<<endl;
   // 更新ndt地图
   start=clock();		//程序开始计时
   ndt.updateInputTarget(output_cloud);
@@ -177,14 +175,12 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   ndt_view_msgs::NDTViewArray view_msg_array;
   ndt.getTarget_cells().getDistplayOcPointCloud(Oc_pointcloud);
   pcl_update::VoxelGridCovariance<pcl::PointXYZ>& target_cells = ndt.getTarget_cells();
-  cout << "1 "<<endl;
+//  cout << "1 "<<endl;
   const std::vector<int> voxel_centroids_leaf_indices = target_cells.getVoxel_centroids_leaf_indices_();
-  cout << "2 "<<endl;
   for (int i = 0; i < voxel_centroids_leaf_indices.size(); i++) {
     int idx = voxel_centroids_leaf_indices[i];
     const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr = target_cells.getLeaf(idx);
     if (leaf_ptr) {
-      cout << "i = "<<i<<endl;
       const Eigen::Matrix3d cov = leaf_ptr->getCov();
       const Eigen::Vector3d mean = leaf_ptr->getMean();
       ndt_view_msgs::NDTView view_msg;
@@ -207,6 +203,7 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   //pub.publish(ori_output);
   pub.publish(update_output);
   pub.publish(ndt_viz);
+  pub_ndt_msgs.publish(view_msg_array);
   std::string file_name = "point_cloud_" + std::to_string(counter) + ".pcd";
 }
 
