@@ -16,7 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Eigen3  REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -125,7 +126,7 @@ include_directories(
  add_library(${PROJECT_NAME}
    src/ndt_to_viewmsg.cpp
  )
-
+target_link_libraries (${PROJECT_NAME} ${catkin_LIBRARIES})
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
