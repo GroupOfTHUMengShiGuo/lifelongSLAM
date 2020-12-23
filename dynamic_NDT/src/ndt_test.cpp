@@ -17,7 +17,7 @@
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/visualization/pcl_visualizer.h>
-
+#include <communication_middleware/ndt_to_viewmsg.h>
 
 #include "ros/ros.h"
 using namespace std :: literals :: chrono_literals;
@@ -39,6 +39,8 @@ static sensor_msgs::PointCloud2 ndt_viz;
 static pcl::PointCloud<pcl::PointXYZI>::Ptr Oc_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
 //申明发布器
 ros::Publisher pub;
+//申明ndt_msgs发布器
+ros::Publisher pub_ndt_msgs;
 static size_t counter = 0;
 void
 SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
@@ -127,18 +129,18 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) / ori_sum * 100;
   cout << "diff = " << diff_sum << "%" << endl;
   //更新上一帧和本帧位姿
-
+  cout << "0 "<<endl;
   T_last=T_now;
   T_last_ori=T_now_ori;
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   T_now = ndt_ori.getFinalTransformation();
   T_now_ori = ndt_ori.getFinalTransformation();
-
+  cout << "0.5 "<<endl;
   // Transforming unfiltered, input cloud using found transform.
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud, ndt_ori.getFinalTransformation());
   pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori, ndt_ori.getFinalTransformation());
-
+  cout << "1 "<<endl;
   // 更新ndt地图
   start=clock();		//程序开始计时
   ndt.updateInputTarget(output_cloud);
@@ -171,8 +173,25 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
 
   // Saving ndt cloud.
   //pcl::io::savePCDFileASCII ("ndt.pcd", *ndt_cloud);
-
+  communication_middleware::NdtToViewmsg* to_viewmsg = new(communication_middleware::NdtToViewmsg);
+  ndt_view_msgs::NDTViewArray view_msg_array;
   ndt.getTarget_cells().getDistplayOcPointCloud(Oc_pointcloud);
+  pcl_update::VoxelGridCovariance<pcl::PointXYZ>& target_cells = ndt.getTarget_cells();
+  cout << "1 "<<endl;
+  const std::vector<int> voxel_centroids_leaf_indices = target_cells.getVoxel_centroids_leaf_indices_();
+  cout << "2 "<<endl;
+  for (int i = 0; i < voxel_centroids_leaf_indices.size(); i++) {
+    int idx = voxel_centroids_leaf_indices[i];
+    const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr = target_cells.getLeaf(idx);
+    if (leaf_ptr) {
+      cout << "i = "<<i<<endl;
+      const Eigen::Matrix3d cov = leaf_ptr->getCov();
+      const Eigen::Vector3d mean = leaf_ptr->getMean();
+      ndt_view_msgs::NDTView view_msg;
+      bool vectory_flag = to_viewmsg->VoxelGridCovarianceToViewmsg(cov, mean, i, &view_msg);
+      if (vectory_flag) view_msg_array.leaves.push_back(view_msg);
+    }
+  }
   // Saving Oc cloud.
   //pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
@@ -231,7 +250,7 @@ main (int argc, char** argv)
     ros::init(argc, argv, "point_cloud_subscriber");
   ros::NodeHandle node_handle;
 
-
+  pub_ndt_msgs = node_handle.advertise<ndt_view_msgs::NDTViewArray> ("NDTView_msg", 1000);
   pub = node_handle.advertise<sensor_msgs::PointCloud2> ("output_rviz", 1000);
 
   ros::Subscriber point_cloud_sub =
