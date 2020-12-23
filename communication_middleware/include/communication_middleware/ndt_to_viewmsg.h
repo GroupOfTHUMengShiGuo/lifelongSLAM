@@ -16,7 +16,8 @@ class NdtToViewmsg {
 //  参数1:输入，体素的方差
 //  参数2:输入，体素的均值
 //  参数3:输出，rosmsg
-  void VoxelGridCovarianceToViewmsg(const Eigen::Matrix3d& cov, const Eigen::Vector3d& mean, const ndt_view_msgs::NDTViewArray& msg);
+//  return 如果成功转换则return true
+  bool VoxelGridCovarianceToViewmsg(const Eigen::Matrix3d& cov, const Eigen::Vector3d& mean, const uint64_t id, ndt_view_msgs::NDTView* msg);
 };
 }
 #endif //SRC_NDT_TO_VIEWMSG_H

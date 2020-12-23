@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   pcl_conversions
+  communication_middleware
+  ndt_view_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -104,12 +106,14 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES semi_dynamic_test
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  CATKIN_DEPENDS roscpp rospy std_msgs communication_middleware
 #  DEPENDS system_lib
 )
-
+#catkin_package(
+#  CATKIN_DEPENDS communication_middleware
+#)
 ###########
 ## Build ##
 ###########
@@ -117,8 +121,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
+ include
+ ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -233,7 +237,7 @@ list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 aux_source_directory(./src DIR_SRCS)
 link_directories(/opt/ros/melodic/lib)
 add_executable(semi_ndt_test ${DIR_SRCS})
-
-target_link_libraries (semi_ndt_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS})
+#add_dependencies(semi_ndt_test ${catkin_EXPORTED_TARGETS})
+target_link_libraries (semi_ndt_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS} /home/zxd/pcl_project/semiDy/devel/lib/libcommunication_middleware.so)
 
 install(TARGETS semi_ndt_test RUNTIME DESTINATION bin)
