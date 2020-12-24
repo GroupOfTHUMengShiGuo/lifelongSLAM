@@ -707,7 +707,6 @@ pcl_update::VoxelGridCovariance<PointT>::applyUpdate (PointCloud &output){
     if (i >= (int)(leaves_.size() * (0.3 * t)) &&
                    it->second.nr_points > min_points_per_voxel_) {
       const Leaf &leaf = it->second;
-      std::cout << "cov_ = " << std::endl << leaf.cov_ << std::endl;
       //cout << "nr_points = " << leaf.nr_points << endl;
       write.open("nr_points.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << leaf.nr_points << endl;
