@@ -83,13 +83,6 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       sphere_temp.scale.x = eigen_val[2];
       sphere_temp.scale.y = eigen_val[1];
       sphere_temp.scale.z = eigen_val[0];
-      if (sphere_temp.scale.x < sphere_temp.scale.y ||
-          sphere_temp.scale.y < sphere_temp.scale.z) {
-        std::cout << "wrong eigenval" << std::endl;
-        std::cout << "sphere_temp.scale.x = " << sphere_temp.scale.x << std::endl;
-        std::cout << "sphere_temp.scale.y = " << sphere_temp.scale.y << std::endl;
-        std::cout << "sphere_temp.scale.z = " << sphere_temp.scale.z << std::endl;
-      }
       sphere_temp.color.r = 10;
       sphere_temp.color.g = 10;
       sphere_temp.color.b = 10;
@@ -102,16 +95,11 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       std::cout << "Can't compute eigen values" << std::endl;
     }
   }
-  std::cout << "the_mean_max_eigenval = " << the_mean_max_eigenval << std::endl;
   if (the_mean_max_eigenval != 0) {
     for (auto &sphere_temp : sphere_array.markers) {
       sphere_temp.scale.x /= the_mean_max_eigenval;
       sphere_temp.scale.y /= the_mean_max_eigenval;
       sphere_temp.scale.z /= the_mean_max_eigenval;
-      std::cout << "sphere_temp.scale.x = " << sphere_temp.scale.x << std::endl;
-      std::cout << "sphere_temp.scale.y = " << sphere_temp.scale.y << std::endl;
-      std::cout << "sphere_temp.scale.z = " << sphere_temp.scale.z << std::endl;
-      std::cout << std::endl << std::endl << std::endl;
     }
   }
   pub_sphere_.publish(sphere_array);
