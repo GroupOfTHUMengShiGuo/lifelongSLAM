@@ -18,7 +18,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <communication_middleware/ndt_to_viewmsg.h>
-
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "ros/ros.h"
 using namespace std :: literals :: chrono_literals;
 // Initializing Normal Distributions Transform (NDT).
@@ -107,7 +108,7 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   end=clock();		//程序结束计时
   double endtime=(double)(end-start)/CLOCKS_PER_SEC;
   ofstream write;
-  write.open("update_align_time.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/update_align_time.txt", ios::app);                //用ios::app不会覆盖文件内容
   write<< endtime*1000 << endl;
   write.close();
   //std::cout<<"update_align time:"<<endtime*1000<<"ms"<<std::endl;	//ms为单位
@@ -116,7 +117,7 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   ndt_ori.align(*output_cloud_ori, init_guess_ori);
   end=clock();		//程序结束计时
   endtime=(double)(end-start)/CLOCKS_PER_SEC;
-  write.open("ori_align_time.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/ori_align_time.txt", ios::app);                //用ios::app不会覆盖文件内容
   write<< endtime*1000 << endl;
   write.close();
   //std::cout<<"ori_align time:"<<endtime*1000<<"ms"<<std::endl;	//ms为单位
@@ -134,7 +135,6 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   T_now = ndt_ori.getFinalTransformation();
   T_now_ori = ndt_ori.getFinalTransformation();
-  cout << "0.5 "<<endl;
   // Transforming unfiltered, input cloud using found transform.
   //TODO 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud, ndt_ori.getFinalTransformation());
@@ -144,7 +144,7 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   ndt.updateInputTarget(output_cloud);
   end=clock();		//程序结束计时
   endtime=(double)(end-start)/CLOCKS_PER_SEC;
-  write.open("update_mapping_time.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/update_mapping_time.txt", ios::app);                //用ios::app不会覆盖文件内容
   write<< endtime*1000 << endl;
   write.close();
   //std::cout<<"update_mapping time:"<<endtime*1000<<"ms"<<std::endl;	//ms为单位
@@ -160,7 +160,7 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   ndt_ori.setInputTarget(target_cloud);
   end=clock();		//程序结束计时
   endtime=(double)(end-start)/CLOCKS_PER_SEC;
-  write.open("ori_mapping_time.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/ori_mapping_time.txt", ios::app);                //用ios::app不会覆盖文件内容
   write<< endtime*1000 << endl;
   write.close();
   //std::cout<<"ori_mapping time:"<<endtime*1000<<"ms"<<std::endl;	//ms为单位
@@ -210,24 +210,27 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
 int
 main (int argc, char** argv)
 {
+//  创建文件夹存储debug文件
+  std::string test = "logfiles";
+  mkdir(test.c_str(),S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
   ofstream write;
-  write.open("Oc.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/Oc.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("nr_points.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/nr_points.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("pt_sum.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/pt_sum.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("pt3d_pt3dT_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/pt3d_pt3dT_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("centroid_sum_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/centroid_sum_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("cov_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/cov_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("mean_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/mean_.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("centroid.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/centroid.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
-  write.open("point_cloud_centroid.txt", ios::trunc);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/point_cloud_centroid.txt", ios::trunc);                //用ios::app不会覆盖文件内容
   write.close();
   // Setting scale dependent NDT parameters
   // Setting minimum transformation difference for termination condition.

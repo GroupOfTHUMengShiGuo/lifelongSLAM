@@ -668,35 +668,35 @@ pcl_update::VoxelGridCovariance<PointT>::applyUpdate (PointCloud &output){
   //TODO delete
   static int frame_count = 2;
   ofstream write;
-  write.open("nr_points.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/nr_points.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("pt_sum.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/pt_sum.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("pt3d_pt3dT_.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/pt3d_pt3dT_.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("centroid_sum_.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/centroid_sum_.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("cov_.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/cov_.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("mean_.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/mean_.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
-  write.open("point_cloud_centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
+  write.open("logfiles/point_cloud_centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
   write << endl << endl << endl;
   write << frame_count << endl;
   write.close();
@@ -708,10 +708,10 @@ pcl_update::VoxelGridCovariance<PointT>::applyUpdate (PointCloud &output){
                    it->second.nr_points > min_points_per_voxel_) {
       const Leaf &leaf = it->second;
       //cout << "nr_points = " << leaf.nr_points << endl;
-      write.open("nr_points.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/nr_points.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << leaf.nr_points << endl;
       write.close();
-      write.open("pt_sum.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/pt_sum.txt", ios::app);                //用ios::app不会覆盖文件内容
 //      write << setprecision(16) << leaf.pt_sum << endl << endl;
 //      write.close();
 //      write.open("pt3d_pt3dT_.txt", ios::app);                //用ios::app不会覆盖文件内容
@@ -720,19 +720,19 @@ pcl_update::VoxelGridCovariance<PointT>::applyUpdate (PointCloud &output){
 //      write.open("centroid_sum_.txt", ios::app);                //用ios::app不会覆盖文件内容
 //      write << setprecision(16) << leaf.centroid_sum_ << endl << endl;
 //      write.close();
-      write.open("cov_.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/cov_.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << setprecision(16) << leaf.cov_ << endl << endl;
       write.close();
-      write.open("mean_.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/mean_.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << setprecision(16) << leaf.mean_ << endl << endl;
       write.close();
-      write.open("centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << setprecision(16) << leaf.centroid << endl << endl;
       write.close();
 
       const auto &point = (*voxel_centroids_)[voxel_leaf_centroids_indices_[it->first]];
       Eigen::Vector3d pt3d = point.getVector3fMap().template cast<double>();
-      write.open("point_cloud_centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
+      write.open("logfiles/point_cloud_centroid.txt", ios::app);                //用ios::app不会覆盖文件内容
       write << setprecision(16) << pt3d << endl << endl;
       write.close();
       t++;
