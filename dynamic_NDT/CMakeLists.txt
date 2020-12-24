@@ -238,6 +238,6 @@ aux_source_directory(./src DIR_SRCS)
 link_directories(/opt/ros/melodic/lib)
 add_executable(semi_ndt_test ${DIR_SRCS})
 #add_dependencies(semi_ndt_test ${catkin_EXPORTED_TARGETS})
-target_link_libraries (semi_ndt_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS} /home/zxd/pcl_project/semiDy/devel/lib/libcommunication_middleware.so)
+target_link_libraries (semi_ndt_test ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS} /home/zh/code/robot/devel/lib/libcommunication_middleware.so)
 
 install(TARGETS semi_ndt_test RUNTIME DESTINATION bin)
