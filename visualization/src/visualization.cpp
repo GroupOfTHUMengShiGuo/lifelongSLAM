@@ -21,7 +21,6 @@ NormalDistributionTransformVisualization::NormalDistributionTransformVisualizati
 
 NormalDistributionTransformVisualization::~NormalDistributionTransformVisualization(){}
 
-// void NormalDistributionTransformVisualization::SphereArrayCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
 void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_view_msgs::NDTViewArray& msg) {
   int sphere_id = 0;
   visualization_msgs::MarkerArray sphere_array;
@@ -54,10 +53,10 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(ndt_cov_mat);
 
     if(eigen_solver.info() == Eigen::Success) {
+      eigen_val = eigen_solver.eigenvalues();
       the_mean_max_eigenval = 1.0 * num_Eigen_Success / (num_Eigen_Success+1) * the_mean_max_eigenval +
                               1.0 / (num_Eigen_Success+1) * eigen_val[2];
       num_Eigen_Success++;
-      eigen_val = eigen_solver.eigenvalues();
       // TODO bug
       // CHECK_GE(eigen_val[0], 0);
       // CHECK_GE(eigen_val[1], 0);
@@ -71,11 +70,12 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
 
       visualization_msgs::Marker sphere_temp;
       sphere_temp.header.stamp = ros::Time::now();
-      sphere_temp.header.frame_id = "odom";
+      sphere_temp.header.frame_id = msg.frame_id;
       sphere_temp.ns = "ndt_spheres";
       sphere_temp.type = visualization_msgs::Marker::SPHERE;
       sphere_temp.id = msg.leaves[i].id;
       sphere_temp.action = visualization_msgs::Marker::ADD;
+      sphere_temp.lifetime = ros::Duration();
       sphere_temp.pose.orientation.x = eigen_quat.x();
       sphere_temp.pose.orientation.y = eigen_quat.y();
       sphere_temp.pose.orientation.z = eigen_quat.z();
@@ -102,6 +102,36 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       sphere_temp.scale.z /= the_mean_max_eigenval;
     }
   }
+
+  // Publish Cube list
+  // TODO make the cube list visualization optional
+  // TODO expand the display range automatically
+  visualization_msgs::Marker cube_list;
+  cube_list.header.stamp = ros::Time::now();
+  cube_list.header.frame_id = msg.frame_id;
+  cube_list.ns = "cubes";
+  cube_list.type = visualization_msgs::Marker::CUBE_LIST;
+  cube_list.id = 0;
+  cube_list.action = visualization_msgs::Marker::ADD;
+  cube_list.lifetime = ros::Duration();
+  cube_list.scale.x = msg.resolution;
+  cube_list.scale.y = msg.resolution;
+  cube_list.scale.z = msg.resolution;
+  cube_list.color.a = 0.5;
+  cube_list.color.r = 1.0;
+
+  for(int i = 0; i < 10; ++i) {
+    for(int j = 0; j < 10; ++j) {
+      geometry_msgs::Point point_temp;
+      point_temp.x = i;
+      point_temp.y = j;
+      point_temp.z = 0;
+      cube_list.points.push_back(point_temp);
+      cube_list.colors.push_back(cube_list.color);
+    }
+  }
+  sphere_array.markers.push_back(cube_list);
+
   pub_sphere_.publish(sphere_array);
   sphere_array.markers.clear();
 }

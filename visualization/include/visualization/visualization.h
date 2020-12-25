@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <geometry_msgs/Point.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -33,7 +34,6 @@ public:
      * param[out] ros MarkerArray message.
      */
     void SphereArrayCallback (const ndt_view_msgs::NDTViewArray& pc2);
-    // void SphereArrayCallback (const sensor_msgs::PointCloud2ConstPtr& pc2);
 
     /**
      * \brief default constructor

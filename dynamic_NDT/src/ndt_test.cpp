@@ -188,6 +188,11 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
       if (vectory_flag) view_msg_array.leaves.push_back(view_msg);
     }
   }
+
+  // TODO store frame_id, x, y, resolution information
+  view_msg_array.frame_id = "odom";
+  view_msg_array.resolution = ndt.getResolution();
+
   // Saving Oc cloud.
   //pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
@@ -254,7 +259,7 @@ main (int argc, char** argv)
   pub = node_handle.advertise<sensor_msgs::PointCloud2> ("output_rviz", 1000);
 
   ros::Subscriber point_cloud_sub =
-          node_handle.subscribe("/points_raw", 1000, SubscribePointCloud);
+          node_handle.subscribe("/rslidar_points", 1000, SubscribePointCloud);
   ros::spin();
 
   // Initializing point cloud visualizer
