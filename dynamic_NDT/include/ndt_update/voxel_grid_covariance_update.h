@@ -543,7 +543,6 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         // Find neighbors within radius in the occupied voxel centroid cloud
         pcl::Indices k_indices;
         const int k = kdtree_.radiusSearch (point, radius, k_indices, k_sqr_distances, max_nn);
-
         // Find leaves corresponding to neighbors
         k_leaves.reserve (k);
         for (const auto &k_index : k_indices)

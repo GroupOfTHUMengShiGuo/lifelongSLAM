@@ -45,6 +45,7 @@ ros::Publisher pub_ndt_msgs;
 static size_t counter = 0;
 void
 SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
+  pcl::PointRepresentation<pcl::PointXYZ>::ConstPtr point_representation (new pcl::DefaultPointRepresentation<pcl::PointXYZ>);
   //记录分数之差
   static double ori_sum=0,diff_sum=0;
   //记录前一帧位姿
@@ -54,9 +55,14 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
   static Eigen::Matrix4f T_now=ndt.getFinalTransformation();
   static Eigen::Matrix4f T_now_ori=ndt_ori.getFinalTransformation();
 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromROSMsg(*lidar_message, *input_cloud_temp);
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(*lidar_message, *input_cloud);
-
+  for (const auto& input_point : *input_cloud_temp) {
+    if (point_representation->isValid (input_point)) {
+      input_cloud->push_back(input_point);
+    }
+  }
   counter++;
 
   // Loading first scan of room.
