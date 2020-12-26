@@ -24,6 +24,23 @@ NormalDistributionTransformVisualization::~NormalDistributionTransformVisualizat
 void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_view_msgs::NDTViewArray& msg) {
   int sphere_id = 0;
   visualization_msgs::MarkerArray sphere_array;
+  // Publish Cube list
+  // TODO make the cube list visualization optional
+  // TODO expand the display range automatically
+  visualization_msgs::Marker cube_list;
+  cube_list.header.stamp = ros::Time::now();
+  cube_list.header.frame_id = msg.frame_id;
+  cube_list.ns = "cubes";
+  cube_list.type = visualization_msgs::Marker::CUBE_LIST;
+  cube_list.id = 0;
+  cube_list.action = visualization_msgs::Marker::ADD;
+  cube_list.lifetime = ros::Duration();
+  cube_list.scale.x = msg.resolution;
+  cube_list.scale.y = msg.resolution;
+  cube_list.scale.z = msg.resolution;
+  cube_list.color.a = 0.3;
+  cube_list.color.b = 0.5;
+  cube_list.color.g = 0.5;
 
   Eigen::Matrix3d ndt_cov_mat, eigen_mat;
   Eigen::Vector3d eigen_val, eigen_vec, ndt_view_position;
@@ -91,6 +108,13 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       sphere_temp.pose.position.y = ndt_view_position[1];
       sphere_temp.pose.position.z = ndt_view_position[2];
       sphere_array.markers.push_back(sphere_temp);
+
+      geometry_msgs::Point point_temp;
+      point_temp.x = msg.leaves[i].cube_position[0];
+      point_temp.y = msg.leaves[i].cube_position[1];
+      point_temp.z = msg.leaves[i].cube_position[2];
+      cube_list.points.push_back(point_temp);
+      cube_list.colors.push_back(cube_list.color);
     } else {
       std::cout << "Can't compute eigen values" << std::endl;
     }
@@ -103,33 +127,9 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     }
   }
 
-  // Publish Cube list
-  // TODO make the cube list visualization optional
-  // TODO expand the display range automatically
-  visualization_msgs::Marker cube_list;
-  cube_list.header.stamp = ros::Time::now();
-  cube_list.header.frame_id = msg.frame_id;
-  cube_list.ns = "cubes";
-  cube_list.type = visualization_msgs::Marker::CUBE_LIST;
-  cube_list.id = 0;
-  cube_list.action = visualization_msgs::Marker::ADD;
-  cube_list.lifetime = ros::Duration();
-  cube_list.scale.x = msg.resolution;
-  cube_list.scale.y = msg.resolution;
-  cube_list.scale.z = msg.resolution;
-  cube_list.color.a = 0.5;
-  cube_list.color.r = 1.0;
 
-  for(int i = 0; i < 10; ++i) {
-    for(int j = 0; j < 10; ++j) {
-      geometry_msgs::Point point_temp;
-      point_temp.x = i;
-      point_temp.y = j;
-      point_temp.z = 0;
-      cube_list.points.push_back(point_temp);
-      cube_list.colors.push_back(cube_list.color);
-    }
-  }
+
+
   sphere_array.markers.push_back(cube_list);
 
   pub_sphere_.publish(sphere_array);

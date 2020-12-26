@@ -189,8 +189,9 @@ SubscribePointCloud(const sensor_msgs::PointCloud2ConstPtr& lidar_message) {
     if (leaf_ptr) {
       const Eigen::Matrix3d cov = leaf_ptr->getCov();
       const Eigen::Vector3d mean = leaf_ptr->getMean();
+      const Eigen::Array4d cube_position = target_cells.GetLeafCenter(idx);
       ndt_view_msgs::NDTView view_msg;
-      bool vectory_flag = to_viewmsg->VoxelGridCovarianceToViewmsg(cov, mean, i, &view_msg);
+      bool vectory_flag = to_viewmsg->VoxelGridCovarianceToViewmsg(cov, mean, i, cube_position, &view_msg);
       if (vectory_flag) view_msg_array.leaves.push_back(view_msg);
     }
   }

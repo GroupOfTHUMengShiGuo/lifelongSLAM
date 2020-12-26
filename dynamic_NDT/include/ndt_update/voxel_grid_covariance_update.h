@@ -579,6 +579,28 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
 
       /*******************************************************改动部分********************************************************/
 
+      /** \brief 在更新坐标时为每个坐标计算新的坐标值
+       * \param[in] leaf的idex序号
+       * \return leaf的中心坐标
+       */
+      inline
+      const Eigen::Array4d GetLeafCenter(const int index) {
+        int index_temp = index;
+
+        //计算ijk
+        Eigen::Vector4i ijk;
+        ijk[2]=index_temp/divb_mul_[2];
+        index_temp-=(ijk[2]*divb_mul_[2]);
+        ijk[1]=index_temp/divb_mul_[1];
+        index_temp-=(ijk[1]*divb_mul_[1]);
+        ijk[0]=index_temp;
+        ijk += min_b_;
+        //计算新的index
+        const Eigen::Array4d LeafCenter = ijk.array().template cast<double>() * leaf_size_.array().template cast<double>() +
+                                          (leaf_size_ / 2).array().template cast<double>();
+        return LeafCenter;
+      }
+
       /** \brief 获得点云索引坐标向量
        * \note Only voxels containing a sufficient number of points are used.
        * \return a map contataining all leaves
