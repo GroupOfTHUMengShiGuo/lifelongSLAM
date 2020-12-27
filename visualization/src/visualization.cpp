@@ -24,6 +24,8 @@ NormalDistributionTransformVisualization::~NormalDistributionTransformVisualizat
 void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_view_msgs::NDTViewArray& msg) {
   int sphere_id = 0;
   visualization_msgs::MarkerArray sphere_array;
+  visualization_msgs::MarkerArray text_array;
+  visualization_msgs::MarkerArray arrow_array;
   // Publish Cube list
   // TODO make the cube list visualization optional
   // TODO expand the display range automatically
@@ -32,7 +34,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
   cube_list.header.frame_id = msg.frame_id;
   cube_list.ns = "cubes";
   cube_list.type = visualization_msgs::Marker::CUBE_LIST;
-  cube_list.id = 0;
+  cube_list.id = -1;
   cube_list.action = visualization_msgs::Marker::ADD;
   cube_list.lifetime = ros::Duration();
   cube_list.scale.x = msg.resolution;
@@ -70,6 +72,10 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(ndt_cov_mat);
 
     if(eigen_solver.info() == Eigen::Success) {
+      // TODO delete
+      std::set<int64_t> idx {270, 273, 249, 276, 243};
+      if (idx.find(msg.leaves[i].id) == idx.end()) continue;
+
       eigen_val = eigen_solver.eigenvalues();
       the_mean_max_eigenval = 1.0 * num_Eigen_Success / (num_Eigen_Success+1) * the_mean_max_eigenval +
                               1.0 / (num_Eigen_Success+1) * eigen_val[2];
@@ -78,19 +84,43 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       // CHECK_GE(eigen_val[0], 0);
       // CHECK_GE(eigen_val[1], 0);
       // CHECK_GE(eigen_val[2], 0);
-      Eigen::Matrix3d eigen_mat;
       eigen_mat.block(0,0,3,1) = eigen_solver.eigenvectors().col(2);
       eigen_mat.block(0,1,3,1) = eigen_solver.eigenvectors().col(1);
       eigen_mat.block(0,2,3,1) = eigen_solver.eigenvectors().col(0);
-      //Eigen::AngleAxisd t_V(M_PI / 3, Eigen::Vector3d(0, 0, 1));//以（0,0,1）为旋转轴，旋转45度M_PI / 4
-      Eigen::Quaterniond eigen_quat(eigen_mat);
+      Eigen::AngleAxisd t_V(0, Eigen::Vector3d(0, 0, 1));//以（0,0,1）为旋转轴，旋转45度M_PI / 4
 
+      //TODO 测试需要删除
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver_r(eigen_mat);
+      //Eigen::EigenSolver<Eigen::Matrix3d> eigen_solver_r(eigen_mat);
+      if(eigen_solver_r.info() == Eigen::Success) {
+        Eigen::Matrix3d test_RM;
+        test_RM<< 0.707107, -0.707107, 0, 0.707107, 0.707107, 0, 0, 0, 1;
+        Eigen::Quaterniond test_q(test_RM);
+
+        Eigen::Vector3d eigen_val_r = eigen_solver_r.eigenvalues();
+        if (eigen_val[0] * eigen_val[1] * eigen_val[2] != ndt_cov_mat.determinant()) {
+          test_q.normalize();
+          Eigen::Vector3d eulerAngle_q=test_q.matrix().eulerAngles(2,1,0);
+          Eigen::Vector3d eulerAngle_r=test_RM.eulerAngles(2,1,0);
+          std::cout << "TEST data"
+                    << std::endl << "id = " << msg.leaves[i].id
+                    << std::endl << "cov = " << std::endl << ndt_cov_mat
+                    << std::endl << "eigen_val = " << std::endl << eigen_val
+                    << std::endl << "eulerAngle_q = " << std::endl << eulerAngle_q / M_PI * 180
+                    << std::endl << "eulerAngle_r = " << std::endl << eulerAngle_r / M_PI * 180
+                    << std::endl << "eigen_mat = " << std::endl << eigen_mat
+                    << std::endl;
+        }
+      }
+
+      Eigen::Quaterniond eigen_quat(eigen_mat);
+      eigen_quat.normalize();
       visualization_msgs::Marker sphere_temp;
       sphere_temp.header.stamp = ros::Time::now();
       sphere_temp.header.frame_id = msg.frame_id;
       sphere_temp.ns = "ndt_spheres";
       sphere_temp.type = visualization_msgs::Marker::SPHERE;
-      sphere_temp.id = msg.leaves[i].id;
+      sphere_temp.id = msg.leaves[i].id * 5;
       sphere_temp.action = visualization_msgs::Marker::ADD;
       sphere_temp.lifetime = ros::Duration();
       sphere_temp.pose.orientation.x = eigen_quat.x();
@@ -115,24 +145,107 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       point_temp.z = msg.leaves[i].cube_position[2];
       cube_list.points.push_back(point_temp);
       cube_list.colors.push_back(cube_list.color);
+
+      visualization_msgs::Marker text_temp;
+      text_temp.header.stamp = ros::Time::now();
+      text_temp.header.frame_id = msg.frame_id;
+      text_temp.ns = "ndt_spheres";
+      text_temp.id = msg.leaves[i].id * 5 + 1;
+      text_temp.action = visualization_msgs::Marker::ADD;
+      text_temp.lifetime = ros::Duration();
+      text_temp.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+      text_temp.pose.position.x = point_temp.x;
+      text_temp.pose.position.y = point_temp.y;
+      text_temp.pose.position.z = point_temp.z;
+      text_temp.scale.z = 0.1;
+      text_temp.color.g = 1.0f;
+      text_temp.color.a = 1;
+      text_temp.text = std::to_string(msg.leaves[i].id);
+      text_array.markers.push_back(text_temp);
+
+      for (int t = 0; t < 3; t++) {
+        visualization_msgs::Marker arrow_temp;
+        arrow_temp.header.stamp = ros::Time::now();
+        arrow_temp.header.frame_id = msg.frame_id;
+        arrow_temp.ns = "ndt_spheres";
+        arrow_temp.id = sphere_temp.id + 2 + t;
+        arrow_temp.action = visualization_msgs::Marker::ADD;
+        arrow_temp.lifetime = ros::Duration();
+        arrow_temp.type = visualization_msgs::Marker::ARROW;
+        arrow_temp.scale.x = 0.1;
+        arrow_temp.scale.y = 0.1;
+        arrow_temp.scale.z = 0.1;
+        arrow_temp.color.r = 1.0;
+        arrow_temp.color.a = 0.5;
+        geometry_msgs::Point p1, p2;
+        p1.x = sphere_temp.pose.position.x;
+        p1.y = sphere_temp.pose.position.y;
+        p1.z = sphere_temp.pose.position.z;
+        p2.x = sphere_temp.pose.position.x + eigen_mat.col(t)[0];
+        p2.y = sphere_temp.pose.position.y + eigen_mat.col(t)[1];
+        p2.z = sphere_temp.pose.position.z + eigen_mat.col(t)[2];
+        arrow_temp.points.push_back(p1) ;
+        arrow_temp.points.push_back(p2) ;
+        arrow_array.markers.push_back(arrow_temp);
+      }
     } else {
       std::cout << "Can't compute eigen values" << std::endl;
     }
   }
   if (the_mean_max_eigenval != 0) {
-    for (auto &sphere_temp : sphere_array.markers) {
+    for (int i = 0; i < sphere_array.markers.size(); i++) {
+      auto &sphere_temp = sphere_array.markers[i];
       sphere_temp.scale.x /= the_mean_max_eigenval;
       sphere_temp.scale.y /= the_mean_max_eigenval;
       sphere_temp.scale.z /= the_mean_max_eigenval;
+      for (int t = 0; t < 3; t++) {
+        auto &arrow_temp = arrow_array.markers[i * 3 + t];
+        double delta_x, delta_y, delta_z;
+        delta_x = arrow_temp.points[1].x - arrow_temp.points[0].x;
+        delta_y = arrow_temp.points[1].y - arrow_temp.points[0].y;
+        delta_z = arrow_temp.points[1].z - arrow_temp.points[0].z;
+        switch (t) {
+          case 0: {
+            arrow_temp.points[1].x = sphere_temp.scale.x * delta_x / 2 + arrow_temp.points[0].x;
+            arrow_temp.points[1].y = sphere_temp.scale.x * delta_y / 2 + arrow_temp.points[0].y;
+            arrow_temp.points[1].z = sphere_temp.scale.x * delta_z / 2 + arrow_temp.points[0].z;
+//            arrow_temp.points[1].x = sphere_temp.scale.x / 2 + arrow_temp.points[0].x;
+//            arrow_temp.points[1].y = arrow_temp.points[0].y;
+//            arrow_temp.points[1].z = arrow_temp.points[0].z;
+            break;
+          }
+          case 1: {
+            arrow_temp.points[1].x = sphere_temp.scale.y * delta_x / 2 + arrow_temp.points[0].x;
+            arrow_temp.points[1].y = sphere_temp.scale.y * delta_y / 2 + arrow_temp.points[0].y;
+            arrow_temp.points[1].z = sphere_temp.scale.y * delta_z / 2 + arrow_temp.points[0].z;
+//            arrow_temp.points[1].x = arrow_temp.points[0].x;
+//            arrow_temp.points[1].y = sphere_temp.scale.y / 2 + arrow_temp.points[0].y;
+//            arrow_temp.points[1].z = arrow_temp.points[0].z;
+            break;
+          }
+          case 2: {
+            arrow_temp.points[1].x = sphere_temp.scale.z * delta_x / 2 + arrow_temp.points[0].x;
+            arrow_temp.points[1].y = sphere_temp.scale.z * delta_y / 2 + arrow_temp.points[0].y;
+            arrow_temp.points[1].z = sphere_temp.scale.z * delta_z / 2 + arrow_temp.points[0].z;
+//            arrow_temp.points[1].x = arrow_temp.points[0].x;
+//            arrow_temp.points[1].y = arrow_temp.points[0].y;
+//            arrow_temp.points[1].z = sphere_temp.scale.z / 2 + arrow_temp.points[0].z;
+            break;
+          }
+          default: {
+            assert(false);
+          }
+        }
+      }
     }
   }
-
-
-
 
   sphere_array.markers.push_back(cube_list);
 
   pub_sphere_.publish(sphere_array);
+//  pub_sphere_.publish(cube_list);
+  pub_sphere_.publish(text_array);
+  pub_sphere_.publish(arrow_array);
   sphere_array.markers.clear();
 }
 
