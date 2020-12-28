@@ -52,7 +52,7 @@ private:
      * \brief topic publisher and subscriber
      */
     ros::Subscriber sub_sphere_;
-    ros::Publisher pub_sphere_;
+    ros::Publisher pub_;
 };
 
 }

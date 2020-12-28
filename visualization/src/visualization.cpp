@@ -15,7 +15,7 @@ namespace NDT
 NormalDistributionTransformVisualization::NormalDistributionTransformVisualization(ros::NodeHandle &nh)
 {
     sub_sphere_ = nh.subscribe("/NDTView_msg", 10, &NormalDistributionTransformVisualization::SphereArrayCallback, this);
-    pub_sphere_ = nh.advertise<visualization_msgs::MarkerArray>("/ndt_spheres", 5);
+    pub_ = nh.advertise<visualization_msgs::MarkerArray>("/ndt_spheres", 5);
     ros::spin();
 }
 
@@ -46,8 +46,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
 
   Eigen::Matrix3d ndt_cov_mat, eigen_mat;
   Eigen::Vector3d eigen_val, eigen_vec, ndt_view_position;
-  // ndt_cov_mat << 0.220307, 0.0716173, -0.0692341, 0.0716173, 0.174037, -0.0383424,
-  //                -0.0692341, -0.0383424, 0.118082;
+
   //变量表示这一帧内所有椭圆主方向的平均特征值大小
   double the_mean_max_eigenval = 0;
   //变量表示所有成功分解的方差矩阵的数量
@@ -72,11 +71,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(ndt_cov_mat);
 
     if(eigen_solver.info() == Eigen::Success) {
-      // TODO delete
-      std::set<int64_t> idx {270, 273, 249, 276, 243, 169, 170, 48, 49, 71, 72, 100, 101};
-      // std::set<int64_t> idx {169, 170, 48, 49};
-      // if (idx.find(msg.leaves[i].id) == idx.end()) continue; 
-
+    
       eigen_val = eigen_solver.eigenvalues();
       the_mean_max_eigenval = 1.0 * num_Eigen_Success / (num_Eigen_Success+1) * the_mean_max_eigenval +
                               1.0 / (num_Eigen_Success+1) * eigen_val[2];
@@ -88,72 +83,9 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       eigen_mat.block(0,0,3,1) = eigen_solver.eigenvectors().col(0);
       eigen_mat.block(0,1,3,1) = eigen_solver.eigenvectors().col(1);
       eigen_mat.block(0,2,3,1) = eigen_solver.eigenvectors().col(2);
-      Eigen::AngleAxisd t_V(0, Eigen::Vector3d(0, 0, 1));//以（0,0,1）为旋转轴，旋转45度M_PI / 4
-      // if(eigen_mat.determinant()<-0.9){
-      // Eigen::Vector3d vec_col0 = eigen_mat.block(0,0,3,1);
-      // eigen_mat.block(0,0,3,1) = eigen_mat.block(0,1,3,1);
-      // eigen_mat.block(0,1,3,1) = vec_col0;
-      // }
-      if(eigen_mat.determinant()<-0.9){
-        // Eigen::Vector3d mat_row0 = eigen_mat.row(0);
-        // eigen_mat.row(0) = eigen_mat.row(1);
-        // eigen_mat.row(1) = mat_row0;
+
+      if(abs(eigen_mat.determinant()+1) < 0.001) {
         eigen_mat.col(0) = - eigen_mat.col(0);
-      }
-      //TODO 测试需要删除
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver_r(eigen_mat);
-      //Eigen::EigenSolver<Eigen::Matrix3d> eigen_solver_r(eigen_mat);
-      if(eigen_solver_r.info() == Eigen::Success) {
-        Eigen::Matrix3d test_RM;
-        // test_RM<< 0.707107, -0.707107, 0, 0.707107, 0.707107, 0, 0, 0, 1;
-        test_RM <<   -0.16871,   0.021366,   0.985434,
-  0.983223 ,-0.0666942 ,  0.169777,
--0.0693502 , -0.997545, 0.00975555;
-  // 0.711439  -0.684794  -0.157833
-  // 0.125613 -0.0970595    0.98732
-  // 0.691431   0.722244 -0.0169674
-
-        //3.0 初始化欧拉角(Z-Y-X，即RPY, 先绕x轴roll,再绕y轴pitch,最后绕z轴yaw)
-        
-        Eigen::Vector3d ea(9.57812/180.0*M_PI, 22.1102/180.0*M_PI, 89.1345/180.0*M_PI);
-        test_RM = Eigen::AngleAxisd(ea[0], Eigen::Vector3d::UnitX()) * 
-                       Eigen::AngleAxisd(ea[1], Eigen::Vector3d::UnitY()) * 
-                       Eigen::AngleAxisd(ea[2], Eigen::Vector3d::UnitZ());
-        test_RM = eigen_mat;
-        Eigen::Quaterniond test_q(test_RM);
-
-        Eigen::Vector3d eigen_val_r = eigen_solver_r.eigenvalues();
-        if (eigen_val[0] * eigen_val[1] * eigen_val[2] != ndt_cov_mat.determinant()) {
-          test_q.normalize();
-          Eigen::Vector3d eulerAngle_q=test_q.matrix().eulerAngles(0,1,2);
-          Eigen::Vector3d eulerAngle_r=test_RM.eulerAngles(0,1,2);
-
-          Eigen::Quaterniond quaternion3;
-          quaternion3 = Eigen::AngleAxisd(eulerAngle_q[0], Eigen::Vector3d::UnitX()) * 
-                  Eigen::AngleAxisd(eulerAngle_q[1], Eigen::Vector3d::UnitY()) * 
-                  Eigen::AngleAxisd(eulerAngle_q[2], Eigen::Vector3d::UnitZ());
-
-          if(eigen_mat.determinant()<-0.9){
-            std::cout << "TEST data"
-                    << std::endl << "id = " << msg.leaves[i].id
-                    << std::endl << "cov = " << std::endl << ndt_cov_mat
-                    << std::endl << "eigen_val = " << std::endl << eigen_val
-                    << std::endl << "eulerAngle_q = " << std::endl << eulerAngle_q / M_PI * 180
-                    << std::endl << "eulerAngle_r = " << std::endl << eulerAngle_r / M_PI * 180
-                    << std::endl << "eigen_mat = " << std::endl << eigen_mat
-                    << std::endl << "test_RM = " << std::endl << test_RM
-                    << std::endl << "test_q = " << std::endl << test_q.coeffs()
-                    << std::endl << "quaternion3 = " << std::endl << quaternion3.coeffs()
-                    << std::endl << "eigen_mat transpose === " << std::endl << eigen_mat * eigen_mat.transpose()
-                    << std::endl << "eigen_mat determinant === " << std::endl << eigen_mat.determinant()
-                    << std::endl << "ndt_cov_mat determinant === " << std::endl << ndt_cov_mat.determinant()
-                    << std::endl << "eigen_mat eigenval === " << std::endl << eigen_val[0]<<" " <<eigen_val[1]<< " " <<eigen_val[2]
-                    << std::endl << "eigen_mat norm 0 === " << std::endl << eigen_mat.col(0).norm()
-                    << std::endl << "eigen_mat norm 1 === " << std::endl << eigen_mat.col(1).norm()
-                    << std::endl << "eigen_mat norm 2 === " << std::endl << eigen_mat.col(2).norm()
-                    << std::endl;
-          }
-        }
       }
 
       Eigen::Quaterniond eigen_quat(eigen_mat);
@@ -252,27 +184,18 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
             arrow_temp.points[1].x = sphere_temp.scale.x * delta_x / 2 + arrow_temp.points[0].x;
             arrow_temp.points[1].y = sphere_temp.scale.x * delta_y / 2 + arrow_temp.points[0].y;
             arrow_temp.points[1].z = sphere_temp.scale.x * delta_z / 2 + arrow_temp.points[0].z;
-//            arrow_temp.points[1].x = sphere_temp.scale.x / 2 + arrow_temp.points[0].x;
-//            arrow_temp.points[1].y = arrow_temp.points[0].y;
-//            arrow_temp.points[1].z = arrow_temp.points[0].z;
             break;
           }
           case 1: {
             arrow_temp.points[1].x = sphere_temp.scale.y * delta_x / 2 + arrow_temp.points[0].x;
             arrow_temp.points[1].y = sphere_temp.scale.y * delta_y / 2 + arrow_temp.points[0].y;
             arrow_temp.points[1].z = sphere_temp.scale.y * delta_z / 2 + arrow_temp.points[0].z;
-//            arrow_temp.points[1].x = arrow_temp.points[0].x;
-//            arrow_temp.points[1].y = sphere_temp.scale.y / 2 + arrow_temp.points[0].y;
-//            arrow_temp.points[1].z = arrow_temp.points[0].z;
             break;
           }
           case 2: {
             arrow_temp.points[1].x = sphere_temp.scale.z * delta_x / 2 + arrow_temp.points[0].x;
             arrow_temp.points[1].y = sphere_temp.scale.z * delta_y / 2 + arrow_temp.points[0].y;
             arrow_temp.points[1].z = sphere_temp.scale.z * delta_z / 2 + arrow_temp.points[0].z;
-//            arrow_temp.points[1].x = arrow_temp.points[0].x;
-//            arrow_temp.points[1].y = arrow_temp.points[0].y;
-//            arrow_temp.points[1].z = sphere_temp.scale.z / 2 + arrow_temp.points[0].z;
             break;
           }
           default: {
@@ -283,12 +206,11 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
     }
   }
 
-  sphere_array.markers.push_back(cube_list);
+  // sphere_array.markers.push_back(cube_list);
 
-  pub_sphere_.publish(sphere_array);
-//  pub_sphere_.publish(cube_list);
-  pub_sphere_.publish(text_array);
-  pub_sphere_.publish(arrow_array);
+  pub_.publish(sphere_array);
+  // pub_.publish(text_array);
+  // pub_.publish(arrow_array);
   sphere_array.markers.clear();
 }
 
