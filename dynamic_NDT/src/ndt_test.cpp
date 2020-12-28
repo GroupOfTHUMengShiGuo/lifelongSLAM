@@ -269,28 +269,28 @@ main (int argc, char** argv)
           node_handle.subscribe("/rslidar_points", 1000, SubscribePointCloud);
   ros::spin();
 
-  // Initializing point cloud visualizer
-  pcl::visualization::PCLVisualizer::Ptr
-          viewer_final (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  viewer_final->setBackgroundColor (0, 0, 0);
+  // // Initializing point cloud visualizer
+  // pcl::visualization::PCLVisualizer::Ptr
+  //         viewer_final (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+  // viewer_final->setBackgroundColor (0, 0, 0);
 
-  // Coloring and visualizing target cloud (red).
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-          target_color (target_cloud, 0, 0, 255);
-  viewer_final->addPointCloud<pcl::PointXYZ> (target_cloud, target_color, "target cloud");
-  viewer_final->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
-                                                  1, "target cloud");
+  // // Coloring and visualizing target cloud (red).
+  // pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+  //         target_color (target_cloud, 0, 0, 255);
+  // viewer_final->addPointCloud<pcl::PointXYZ> (target_cloud, target_color, "target cloud");
+  // viewer_final->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
+  //                                                 1, "target cloud");
 
-    // Starting visualizer
-    viewer_final->addCoordinateSystem (1.0, "global");
-    viewer_final->initCameraParameters ();
+  //   // Starting visualizer
+  //   viewer_final->addCoordinateSystem (1.0, "global");
+  //   viewer_final->initCameraParameters ();
 
-    // Wait until visualizer window is closed.
-    while (!viewer_final->wasStopped ())
-    {
-        viewer_final->spinOnce (100);
-        std::this_thread::sleep_for(100ms);
-    }
+  //   // Wait until visualizer window is closed.
+  //   while (!viewer_final->wasStopped ())
+  //   {
+  //       viewer_final->spinOnce (100);
+  //       std::this_thread::sleep_for(100ms);
+  //   }
 
     return (0);
 }
