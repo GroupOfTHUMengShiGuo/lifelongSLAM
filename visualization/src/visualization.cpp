@@ -98,7 +98,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
         // Eigen::Vector3d mat_row0 = eigen_mat.row(0);
         // eigen_mat.row(0) = eigen_mat.row(1);
         // eigen_mat.row(1) = mat_row0;
-        // eigen_mat.col(0) = - eigen_mat.col(0);
+        eigen_mat.col(0) = - eigen_mat.col(0);
       }
       //TODO 测试需要删除
       Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver_r(eigen_mat);
