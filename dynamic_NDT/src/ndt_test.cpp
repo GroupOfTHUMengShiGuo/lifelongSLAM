@@ -266,7 +266,7 @@ main (int argc, char** argv)
   pub = node_handle.advertise<sensor_msgs::PointCloud2> ("output_rviz", 1000);
 
   ros::Subscriber point_cloud_sub =
-          node_handle.subscribe("/rslidar_points", 1000, SubscribePointCloud);
+          node_handle.subscribe("/points_raw", 1000, SubscribePointCloud);
   ros::spin();
   
   return (0);

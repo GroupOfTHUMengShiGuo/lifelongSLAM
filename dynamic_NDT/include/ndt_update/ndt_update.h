@@ -295,7 +295,8 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
       void inline
       init ()
       {
-        target_cells_.setLeafSize (resolution_, resolution_, resolution_);
+        //target_cells_.setLeafSize (resolution_, resolution_, resolution_);
+        target_cells_.setLeafSize (resolution_, resolution_, 5 * resolution_);
         target_cells_.setInputCloud ( target_ );
         // Initiate voxel structure.
 

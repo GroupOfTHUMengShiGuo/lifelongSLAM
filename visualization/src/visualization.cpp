@@ -209,7 +209,7 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
   // sphere_array.markers.push_back(cube_list);
 
   pub_.publish(sphere_array);
-  // pub_.publish(text_array);
+   pub_.publish(text_array);
   // pub_.publish(arrow_array);
   sphere_array.markers.clear();
 }
