@@ -612,9 +612,10 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
       }
 
       /** \brief 更新每个voxel中的Oc值
+       * \param[in] 传入计算得到的最终位姿的逆，即世界坐标系到雷达坐标系的转换位姿
        */
       void
-      OcUpdate ();
+      OcUpdate (const Eigen::Matrix4f &transform);
       /** \brief 对目标点云进行处理并更新voxel的值
        * \param[out] output cloud containing centroids of voxels containing a sufficient number of points
        */

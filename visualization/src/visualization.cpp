@@ -129,9 +129,9 @@ void NormalDistributionTransformVisualization::SphereArrayCallback(const ndt_vie
       text_temp.action = visualization_msgs::Marker::ADD;
       text_temp.lifetime = ros::Duration();
       text_temp.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-      text_temp.pose.position.x = point_temp.x;
-      text_temp.pose.position.y = point_temp.y;
-      text_temp.pose.position.z = point_temp.z;
+      text_temp.pose.position.x = sphere_temp.pose.position.x;
+      text_temp.pose.position.y = sphere_temp.pose.position.y;
+      text_temp.pose.position.z = sphere_temp.pose.position.z;
       text_temp.scale.z = 0.1;
       text_temp.color.g = 1.0f;
       text_temp.color.a = 1;

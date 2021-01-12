@@ -275,7 +275,7 @@ pcl_update::VoxelGridCovariance<PointT>::getDistplayOcPointCloud (const pcl::Poi
 }
 
 template<typename PointT> void
-pcl_update::VoxelGridCovariance<PointT>::OcUpdate() {
+pcl_update::VoxelGridCovariance<PointT>::OcUpdate (const Eigen::Matrix4f &transform){
   std::shared_ptr<ComputeProbability> computer(new ComputeProbability(input_));
 
 
@@ -308,6 +308,8 @@ pcl_update::VoxelGridCovariance<PointT>::OcUpdate() {
       {
         rand_point = Eigen::Vector3d (var_nor (), var_nor (), var_nor ());
         dist_point = cell_mean + cholesky_decomp * rand_point;
+        //将每个点的位姿转换为雷达坐标系的表示
+        dist_point = transform.block<3,3>(0,0).template cast<double>() * dist_point + transform.block<3,1>(0,3).template cast<double>();
         //计算每个随机点所对应的概率值
         double Pr = computer->compute_PointProbability (pcl::PointXYZ (static_cast<float> (dist_point (0)),
                                                                        static_cast<float> (dist_point (1)),
@@ -738,7 +740,6 @@ pcl_update::VoxelGridCovariance<PointT>::applyUpdate (PointCloud &output){
       t++;
     }
   }
-  OcUpdate();
   output.width = output.size ();
 }
 

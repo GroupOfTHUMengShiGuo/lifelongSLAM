@@ -43,9 +43,10 @@
 //#include <pcl/memory.h>
 #include <pcl/pcl_macros.h>
 #include <pcl/common/utils.h>
-#include <pcl/registration/registration.h>
+//#include <pcl/registration/registration.h>
 //#include <pcl/filters/voxel_grid_covariance.h>
 #include "voxel_grid_covariance_update.h"
+#include "registration_update.h"
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <ctime>
 
@@ -232,16 +233,19 @@ class NormalDistributionsTransform : public pcl::Registration<PointSource, Point
           PCL_ERROR ("[pcl::%s::setInputTarget] Invalid or empty point cloud dataset given!\n", getClassName ().c_str ());
           return;
         }
+
         *updateTarget_=*cloud;
         target_cloud_updated_ = true;
         //判断是否是已有地图
         if(target_cells_.getVoxel_centroids_leaf_indices_().size()==0) {
           //如果还没有有地图的值，执行init函数
+          pcl::Registration<PointSource, PointTarget>::setInputTarget(cloud);
           init ();
         }else {
           //如果已经有了则调用更新函数
           Update_target_cells ();
         }
+        target_cells_.OcUpdate(final_transformation_.inverse());
       }
       /**************************************改动部分*************************************/
       /** \brief 获取ndt对象中的ndt体素target_cells_
