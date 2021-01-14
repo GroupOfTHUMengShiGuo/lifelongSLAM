@@ -115,8 +115,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         }
 
         /** \brief Get the inverse of the voxel covariance.
-          * \return inverse covariance matrix
-          */
+         * \return inverse covariance matrix
+         */
         Eigen::Matrix3d
         getInverseCov () const
         {
@@ -124,8 +124,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         }
 
         /** \brief Get the voxel centroid.
-          * \return centroid
-          */
+         * \return centroid
+         */
         Eigen::Vector3d
         getMean () const
         {
@@ -133,9 +133,9 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         }
 
         /** \brief Get the eigen vectors of the voxel covariance.
-          * \note Order corresponds with \ref getEvals
-          * \return matrix whose columns contain eigen vectors
-          */
+         * \note Order corresponds with \ref getEvals
+         * \return matrix whose columns contain eigen vectors
+         */
         Eigen::Matrix3d
         getEvecs () const
         {
@@ -143,9 +143,9 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         }
 
         /** \brief Get the eigen values of the voxel covariance.
-          * \note Order corresponds with \ref getEvecs
-          * \return vector of eigen values
-          */
+         * \note Order corresponds with \ref getEvecs
+         * \return vector of eigen values
+         */
         Eigen::Vector3d
         getEvals () const
         {
@@ -153,8 +153,8 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         }
 
         /** \brief Get the number of points contained by this voxel.
-          * \return number of points
-          */
+         * \return number of points
+         */
         int
         getPointCount () const
         {
@@ -163,14 +163,30 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
 
         /******************************改动部分*************************************/
         /** \brief 获得本voxel的Oc值.
-          * \return Oc
-          */
+         * \return Oc
+         */
         double
         getOc () const
         {
           return (Occupancy_probability_);
         }
 
+        /** \brief 获得本voxel的均值的向量.
+         * \return vector_of_mean_
+         */
+        const std::vector<Eigen::Vector3d>
+        getVector_of_mean () const
+        {
+          return (vector_of_mean_);
+        }
+        /** \brief 获得本voxel的单帧点数的向量.
+         * \return vector_of_nr_points_
+         */
+        const std::vector<int>
+        getVector_of_nr_points () const
+        {
+          return (vector_of_nr_points_);
+        }
         /** \brief 设置本voxel的Oc值.
           * \return Oc
           */
@@ -208,6 +224,11 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
 
         /** \brief 本体素内所包含的点云值 */
         const pcl::PointCloud<pcl::PointXYZ>::Ptr _Pc;
+
+        /** \brief 表示这个格中每一帧的均值 */
+        std::vector<Eigen::Vector3d> vector_of_mean_;
+        /** \brief 表示这个格中每一帧的点数 */
+        std::vector<int> vector_of_nr_points_;
       };
 
       /** \brief Pointer to VoxelGridCovariance leaf structure */
@@ -714,7 +735,7 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
       /** \brief KdTree generated using \ref voxel_centroids_ (used for searching). */
       pcl::KdTreeFLANN<PointT> kdtree_;
       /*******************************************************改动部分********************************************************/
-      /** \brief Voxel structure containing all leaf nodes (includes voxels with less than a sufficient number of points). */
+      /** \brief 表示从体素的idx到对应重心点云中点的序号的映射. */
       std::map<int, int> voxel_leaf_centroids_indices_;
   };
 }

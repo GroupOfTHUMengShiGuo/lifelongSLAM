@@ -377,6 +377,21 @@ pcl_update::VoxelGridCovariance<PointT>::addLeavesCurrToLeaves (const std::map<s
                                                                 PointCloud &output,
                                                                 int centroid_size,
                                                                 int rgba_index){
+//  // 设置两个标志位分别表示第一帧和第二帧点云
+//  static bool flag_first_scan = true , flag_second_scan = true;
+//  static int count = 0;
+//  count++;
+//  // 设置一个数值表示我要采集的格在重心点云中的序号
+//  int output_num = -1;
+//  if (flag_first_scan) {
+//    cout << "这是第 " << count << "帧" << endl;
+//    flag_first_scan = false;
+//  } else if (flag_second_scan) {
+//    cout << "这是第 " << count << "帧" << endl;
+//    cout << "请输入要采集的位置" << endl;
+//    cin >> output_num;
+//    flag_second_scan = false;
+//  }
   output.reserve(leaves_.size());
   if (searchable_)
     voxel_centroids_leaf_indices_.reserve(leaves_.size());
@@ -428,6 +443,10 @@ pcl_update::VoxelGridCovariance<PointT>::addLeavesCurrToLeaves (const std::map<s
     // If the voxel contains sufficient points, its covariance is calculated and is added to the voxel centroids and output clouds.
     // Points with less than the minimum points will have a can not be accuratly approximated using a normal distribution.
     if (nr_pointsNow >= min_points_per_voxel_) {
+      //将符合要求的体素的单帧均值加到其vector中去
+      leaf.vector_of_mean_.push_back(leaf_curr.mean_);
+      //将符合要求的体素的单帧点数加到其vector中去
+      leaf.vector_of_nr_points_.push_back(leaf_curr.nr_points);
       if (save_leaf_layout_)
         leaf_layout_[it->first] = cp++;
       if (voxel_leaf_centroids_indices_.find(it->first) == voxel_leaf_centroids_indices_.end()) {
