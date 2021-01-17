@@ -16,6 +16,7 @@
 
 #include <communication_middleware/ndt_to_viewmsg.h>
 #include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <sys/stat.h>
@@ -37,10 +38,15 @@ static pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud_update(
 static sensor_msgs::PointCloud2 ori_output;
 // updatendt的结果点云发送到rviz上
 static sensor_msgs::PointCloud2 update_output;
+// update的单帧结果点云发送到rviz上
+static sensor_msgs::PointCloud2 update_single_output;
 //显示ndt地图的点云
 static sensor_msgs::PointCloud2 ndt_viz;
 //用来显示的Oc点云
 static pcl::PointCloud<pcl::PointXYZI>::Ptr Oc_pointcloud(
+    new pcl::PointCloud<pcl::PointXYZI>);
+//用来单帧显示的Oc点云
+static pcl::PointCloud<pcl::PointXYZI>::Ptr single_oc_pointcloud(
     new pcl::PointCloud<pcl::PointXYZI>);
 //申明发布器
 ros::Publisher pub;
@@ -63,15 +69,25 @@ void SubscribePointCloud(
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_temp(
       new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*lidar_message, *input_cloud_temp);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_ori(
+      new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
   for (const auto &input_point : *input_cloud_temp) {
-    if (point_representation->isValid(input_point)) {
-      input_cloud->push_back(input_point);
+    if (point_representation->isValid(input_point)// &&
+        //input_point.x * input_point.x + input_point.y * input_point.y <=900
+        ) {
+      input_cloud_ori->push_back(input_point);
     }
   }
   counter++;
-
+  // 进行统计滤波去除离群点
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  sor.setInputCloud(input_cloud_ori);
+  sor.setMeanK(50);
+  sor.setStddevMulThresh(1);
+  sor.setNegative(false);
+  sor.filter(*input_cloud);
   // Loading first scan of room.
   if (input_cloud->empty()) {
     // /media/zxd/60787A51787A25C6/pcl_ndt/PointCloud/bin2pcd/velodyne/pcd/1025/
@@ -210,11 +226,13 @@ void SubscribePointCloud(
       new (communication_middleware::NdtToViewmsg);
   ndt_view_msgs::NDTViewArray view_msg_array;
   ndt.getTarget_cells().getDistplayOcPointCloud(Oc_pointcloud);
+  ndt.getTarget_cells().getDistplaySingleOcPointCloud(single_oc_pointcloud);
   pcl_update::VoxelGridCovariance<pcl::PointXYZ> &target_cells =
       ndt.getTarget_cells();
   //  cout << "1 "<<endl;
   const std::vector<int> voxel_centroids_leaf_indices =
       target_cells.getVoxel_centroids_leaf_indices_();
+//  发送累积的出来的高斯分布
   for (int i = 0; i < voxel_centroids_leaf_indices.size(); i++) {
     int idx = voxel_centroids_leaf_indices[i];
     const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr =
@@ -227,6 +245,22 @@ void SubscribePointCloud(
       bool vectory_flag = to_viewmsg->VoxelGridCovarianceToViewmsg(
           cov, mean, i, cube_position, &view_msg);
       if (vectory_flag) view_msg_array.leaves.push_back(view_msg);
+    }
+  }
+  ndt_view_msgs::NDTViewArray view_singlemsg_array;
+  //  发送单帧的计算出来的高斯分布
+  for (int i = 0; i < voxel_centroids_leaf_indices.size(); i++) {
+    int idx = voxel_centroids_leaf_indices[i];
+    const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr =
+        target_cells.getLeaf(idx);
+    if (leaf_ptr) {
+      const Eigen::Matrix3d cov = (leaf_ptr->getVector_of_cov()).back();
+      const Eigen::Vector3d mean = (leaf_ptr->getVector_of_mean()).back();
+      const Eigen::Array4d cube_position = target_cells.GetLeafCenter(idx);
+      ndt_view_msgs::NDTView view_msg;
+      bool vectory_flag = to_viewmsg->VoxelGridCovarianceToViewmsg(
+          cov, mean, i, cube_position, &view_msg);
+      if (vectory_flag) view_singlemsg_array.leaves.push_back(view_msg);
     }
   }
   //输出某体素的单帧数据
@@ -285,23 +319,28 @@ void SubscribePointCloud(
   // TODO store frame_id, x, y, resolution information
   view_msg_array.frame_id = "odom";
   view_msg_array.resolution = ndt.getResolution();
-
+  view_singlemsg_array.frame_id = "odom_single";
+  view_singlemsg_array.resolution = ndt.getResolution();
   // Saving Oc cloud.
   // pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
   //转换成ros消息的格式
   pcl::toROSMsg(*target_cloud, ori_output);
   pcl::toROSMsg(*Oc_pointcloud, update_output);
+  pcl::toROSMsg(*single_oc_pointcloud, update_single_output);
   pcl::toROSMsg(*ndt_cloud, ndt_viz);
   ori_output.header.frame_id = "map";
   update_output.header.frame_id = "odom";
+  update_single_output.header.frame_id = "odom_single";
   ndt_viz.header.frame_id = "ndt";
 
   //发送到output topic
   pub.publish(ori_output);
   pub.publish(update_output);
+  pub.publish(update_single_output);
   pub.publish(ndt_viz);
   pub_ndt_msgs.publish(view_msg_array);
+  pub_ndt_msgs.publish(view_singlemsg_array);
   std::string file_name = "point_cloud_" + std::to_string(counter) + ".pcd";
 }
 

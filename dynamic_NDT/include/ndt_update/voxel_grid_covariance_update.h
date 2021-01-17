@@ -100,8 +100,7 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
           cov_ (Eigen::Matrix3d::Zero ()),
           icov_ (Eigen::Matrix3d::Zero ()),
           evecs_ (Eigen::Matrix3d::Identity ()),
-          evals_ (Eigen::Vector3d::Zero ()),
-          _Pc(new pcl::PointCloud<pcl::PointXYZ>)
+          evals_ (Eigen::Vector3d::Zero ())
         {
         }
 
@@ -231,7 +230,7 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         double Occupancy_probability_;
 
         /** \brief 本体素内所包含的点云值 */
-        const pcl::PointCloud<pcl::PointXYZ>::Ptr _Pc;
+        std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> vector_of_pc;
 
         /** \brief 表示这个格中每一帧的单帧均值 */
         std::vector<Eigen::Vector3d> vector_of_mean_;
@@ -682,9 +681,13 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
           }
       }
     /** \brief 获得概率更新后的点云
-      */
+     */
     void
     getDistplayOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud);
+    /** \brief 获得概率更新后的点云
+     */
+    void
+    getDistplaySingleOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &display_single_pointcloud);
 
       /*******************************************************改动部分********************************************************/
     protected:

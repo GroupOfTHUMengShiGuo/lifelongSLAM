@@ -259,19 +259,35 @@ template<typename PointT> void
 pcl_update::VoxelGridCovariance<PointT>::getDistplayOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud){
   displaypointcloud -> clear();
   displaypointcloud->height = 1;
-  int cnt = 100;
   for (typename std::map<std::size_t, Leaf>::iterator it = leaves_.begin (); it != leaves_.end (); ++it)
   {
     Leaf& leaf = it->second;
     double Oc = leaf.getOc();
-    for (const auto& point: *(leaf._Pc))
-    {
-      //point.intensity = leaf.getOc();
-      displaypointcloud -> push_back(pcl::PointXYZI(point.x,point.y,point.z,Oc));
+    for (const auto& pc : leaf.vector_of_pc) {
+      for (const auto &point : *(pc)) {
+        // point.intensity = leaf.getOc();
+        displaypointcloud->push_back(pcl::PointXYZI(point.x, point.y, point.z, Oc));
+      }
     }
-    cnt--;
   }
   displaypointcloud->width = displaypointcloud->size ();
+}
+
+template<typename PointT> void
+pcl_update::VoxelGridCovariance<PointT>::getDistplaySingleOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &display_single_pointcloud){
+  display_single_pointcloud -> clear();
+  display_single_pointcloud->height = 1;
+  for (typename std::map<std::size_t, Leaf>::iterator it = leaves_.begin (); it != leaves_.end (); ++it)
+  {
+    Leaf& leaf = it->second;
+    double Oc = leaf.getOc();
+    const auto &pc = leaf.vector_of_pc.back();
+    for (const auto &point : *(pc)) {
+      // point.intensity = leaf.getOc();
+      display_single_pointcloud->push_back(pcl::PointXYZI(point.x, point.y, point.z, Oc));
+    }
+  }
+  display_single_pointcloud->width = display_single_pointcloud->size ();
 }
 
 template<typename PointT> void
@@ -369,7 +385,8 @@ pcl_update::VoxelGridCovariance<PointT>::addPointToLeavesCurr (const PointT &poi
   }
   ++leaf.nr_points;
   //在体素对应的点云中加入对应的点
-  leaf._Pc->push_back(point);
+  leaf.vector_of_pc.push_back(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+  leaf.vector_of_pc[0]->push_back(point);
 }
 
 template<typename PointT> void
@@ -415,7 +432,8 @@ pcl_update::VoxelGridCovariance<PointT>::addLeavesCurrToLeaves (const std::map<s
       leaf.centroid.setZero();
     }
     Leaf &leaf = leaves_[it->first];
-    *(leaf._Pc) += *(leaf_curr._Pc);
+    leaf.vector_of_pc.push_back(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+    *(leaf.vector_of_pc.back()) += *(leaf_curr.vector_of_pc[0]);
     const int nr_pointsNow = leaf.nr_points + leaf_curr.nr_points;
     // Normalize the centroid
     const float factorOfcentroid_ = 1.0 * leaf.nr_points / nr_pointsNow;
