@@ -74,8 +74,8 @@ void SubscribePointCloud(
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
   for (const auto &input_point : *input_cloud_temp) {
-    if (point_representation->isValid(input_point)// &&
-        //input_point.x * input_point.x + input_point.y * input_point.y <=900
+    if (point_representation->isValid(input_point) &&
+        input_point.z >= -2.6
         ) {
       input_cloud_ori->push_back(input_point);
     }
@@ -102,7 +102,7 @@ void SubscribePointCloud(
     *target_cloud_update = *input_cloud;
     // 设置初始要建立ndt地图的点云.
     ndt.updateInputTarget(target_cloud_update);
-    ndt_ori.setInputTarget(target_cloud);
+//    ndt_ori.setInputTarget(target_cloud);
     return;
   }
   // Filtering input scan to roughly 10% of original size to increase speed of
@@ -122,22 +122,22 @@ void SubscribePointCloud(
   //将要加入结果点云的数据进行降采样
   approximate_voxel_filter.setLeafSize(0.01, 0.01, 0.01);
   approximate_voxel_filter.filter(*filtered_cloud_update);
-  approximate_voxel_filter.filter(*filtered_cloud_ori);
+//  approximate_voxel_filter.filter(*filtered_cloud_ori);
   std::cout << "Filtered cloud contains " << filtered_cloud_update->size()
             << " data points from room_scan2.pcd" << std::endl;
   // Setting point cloud to be aligned.
   ndt.setInputSource(filtered_cloud);
-  ndt_ori.setInputSource(filtered_cloud);
+//  ndt_ori.setInputSource(filtered_cloud);
   //按照匀速模型设置初始位姿
   Eigen::Matrix4f init_guess = T_now * T_last.inverse() * T_now;
-  Eigen::Matrix4f init_guess_ori = T_now_ori * T_last_ori.inverse() * T_now_ori;
+//  Eigen::Matrix4f init_guess_ori = T_now_ori * T_last_ori.inverse() * T_now_ori;
 
   // Calculating required rigid transform to align the input cloud to the target
   // cloud.
   pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ori(
-      new pcl::PointCloud<pcl::PointXYZ>);
+//  pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ori(
+//      new pcl::PointCloud<pcl::PointXYZ>);
 
   //开始匹配
   start = clock();  //程序开始计时
@@ -153,7 +153,7 @@ void SubscribePointCloud(
   // //ms为单位
 
   start = clock();  //程序开始计时
-  ndt_ori.align(*output_cloud_ori, init_guess_ori);
+//  ndt_ori.align(*output_cloud_ori, init_guess_ori);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_align_time.txt",
@@ -163,16 +163,16 @@ void SubscribePointCloud(
   // std::cout<<"ori_align time:"<<endtime*1000<<"ms"<<std::endl;
   // //ms为单位
 
-  std::cout << "Normal Distributions Transform has converged:"
-            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
-            << std::endl;
-  std::cout << "Normal Distributions Transform has converged:"
-            << ndt_ori.hasConverged()
-            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
-  ori_sum = ndt_ori.getFitnessScore();
-  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
-                            ori_sum * 100;
-  cout << "diff = " << diff_sum << "%" << endl;
+//  std::cout << "Normal Distributions Transform has converged:"
+//            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
+//            << std::endl;
+//  std::cout << "Normal Distributions Transform has converged:"
+//            << ndt_ori.hasConverged()
+//            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
+//  ori_sum = ndt_ori.getFitnessScore();
+//  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
+//                            ori_sum * 100;
+//  cout << "diff = " << diff_sum << "%" << endl;
   //更新上一帧和本帧位姿
   T_last = T_now;
   T_last_ori = T_now_ori;
@@ -183,8 +183,8 @@ void SubscribePointCloud(
   // Transforming unfiltered, input cloud using found transform.
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud,
                            T_now);
-  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
-                           T_now_ori);
+//  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
+//                           T_now_ori);
   // 更新ndt地图
   start = clock();  //程序开始计时
   ndt.updateInputTarget(output_cloud);
@@ -201,11 +201,11 @@ void SubscribePointCloud(
   //  pcl::io::savePCDFileASCII ("output.pcd", *output_cloud);
 
   //将转换后的地图加入到
-  *target_cloud = *target_cloud + *output_cloud_ori;
+//  *target_cloud = *target_cloud + *output_cloud_ori;
   *target_cloud_update = *target_cloud_update + *output_cloud;
 
   start = clock();  //程序开始计时
-  ndt_ori.setInputTarget(target_cloud);
+//  ndt_ori.setInputTarget(target_cloud);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_mapping_time.txt",
@@ -325,7 +325,7 @@ void SubscribePointCloud(
   // pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
   //转换成ros消息的格式
-  pcl::toROSMsg(*target_cloud, ori_output);
+//  pcl::toROSMsg(*target_cloud, ori_output);
   pcl::toROSMsg(*Oc_pointcloud, update_output);
   pcl::toROSMsg(*single_oc_pointcloud, update_single_output);
   pcl::toROSMsg(*ndt_cloud, ndt_viz);
@@ -335,7 +335,7 @@ void SubscribePointCloud(
   ndt_viz.header.frame_id = "ndt";
 
   //发送到output topic
-  pub.publish(ori_output);
+//  pub.publish(ori_output);
   pub.publish(update_output);
   pub.publish(update_single_output);
   pub.publish(ndt_viz);
