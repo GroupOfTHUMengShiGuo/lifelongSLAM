@@ -256,7 +256,7 @@ pcl_update::VoxelGridCovariance<PointT>::getDisplayCloud (pcl::PointCloud<pcl::P
 /********************************************************改动部分****************************************************/
 
 template<typename PointT> void
-pcl_update::VoxelGridCovariance<PointT>::getDistplayOcPointCloud (const pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud){
+pcl_update::VoxelGridCovariance<PointT>::getDistplayOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud){
   displaypointcloud -> clear();
   displaypointcloud->height = 1;
   int cnt = 100;
@@ -447,6 +447,8 @@ pcl_update::VoxelGridCovariance<PointT>::addLeavesCurrToLeaves (const std::map<s
       leaf.vector_of_mean_.push_back(leaf_curr.mean_);
       //将符合要求的体素的单帧点数加到其vector中去
       leaf.vector_of_nr_points_.push_back(leaf_curr.nr_points);
+      //将符合要求的体素的单帧方差加到其vector中去
+      leaf.vector_of_cov_.push_back(leaf_curr.cov_);
       if (save_leaf_layout_)
         leaf_layout_[it->first] = cp++;
       if (voxel_leaf_centroids_indices_.find(it->first) == voxel_leaf_centroids_indices_.end()) {

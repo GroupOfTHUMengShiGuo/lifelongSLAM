@@ -179,6 +179,14 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         {
           return (vector_of_mean_);
         }
+        /** \brief 获得本voxel的均值的方差.
+         * \return vector_of_cov_
+         */
+        const std::vector<Eigen::Matrix3d>
+        getVector_of_cov () const
+        {
+          return (vector_of_cov_);
+        }
         /** \brief 获得本voxel的单帧点数的向量.
          * \return vector_of_nr_points_
          */
@@ -225,8 +233,10 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         /** \brief 本体素内所包含的点云值 */
         const pcl::PointCloud<pcl::PointXYZ>::Ptr _Pc;
 
-        /** \brief 表示这个格中每一帧的均值 */
+        /** \brief 表示这个格中每一帧的单帧均值 */
         std::vector<Eigen::Vector3d> vector_of_mean_;
+        /** \brief 表示这个格中每一帧的单帧方差 */
+        std::vector<Eigen::Matrix3d> vector_of_cov_;
         /** \brief 表示这个格中每一帧的点数 */
         std::vector<int> vector_of_nr_points_;
       };
@@ -674,7 +684,7 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
     /** \brief 获得概率更新后的点云
       */
     void
-    getDistplayOcPointCloud (const pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud);
+    getDistplayOcPointCloud (pcl::PointCloud<pcl::PointXYZI>::Ptr &displaypointcloud);
 
       /*******************************************************改动部分********************************************************/
     protected:

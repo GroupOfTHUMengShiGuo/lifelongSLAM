@@ -86,7 +86,7 @@ void SubscribePointCloud(
     *target_cloud_update = *input_cloud;
     // 设置初始要建立ndt地图的点云.
     ndt.updateInputTarget(target_cloud_update);
-//    ndt_ori.setInputTarget(target_cloud);
+    ndt_ori.setInputTarget(target_cloud);
     return;
   }
   // Filtering input scan to roughly 10% of original size to increase speed of
@@ -111,7 +111,7 @@ void SubscribePointCloud(
             << " data points from room_scan2.pcd" << std::endl;
   // Setting point cloud to be aligned.
   ndt.setInputSource(filtered_cloud);
-//  ndt_ori.setInputSource(filtered_cloud);
+  ndt_ori.setInputSource(filtered_cloud);
   //按照匀速模型设置初始位姿
   Eigen::Matrix4f init_guess = T_now * T_last.inverse() * T_now;
   Eigen::Matrix4f init_guess_ori = T_now_ori * T_last_ori.inverse() * T_now_ori;
@@ -137,7 +137,7 @@ void SubscribePointCloud(
   // //ms为单位
 
   start = clock();  //程序开始计时
-//  ndt_ori.align(*output_cloud_ori, init_guess_ori);
+  ndt_ori.align(*output_cloud_ori, init_guess_ori);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_align_time.txt",
@@ -147,30 +147,28 @@ void SubscribePointCloud(
   // std::cout<<"ori_align time:"<<endtime*1000<<"ms"<<std::endl;
   // //ms为单位
 
-//  std::cout << "Normal Distributions Transform has converged:"
-//            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
-//            << std::endl;
-//  std::cout << "Normal Distributions Transform has converged:"
-//            << ndt_ori.hasConverged()
-//            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
-//  ori_sum = ndt_ori.getFitnessScore();
-//  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
-//                            ori_sum * 100;
-//  cout << "diff = " << diff_sum << "%" << endl;
+  std::cout << "Normal Distributions Transform has converged:"
+            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
+            << std::endl;
+  std::cout << "Normal Distributions Transform has converged:"
+            << ndt_ori.hasConverged()
+            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
+  ori_sum = ndt_ori.getFitnessScore();
+  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
+                            ori_sum * 100;
+  cout << "diff = " << diff_sum << "%" << endl;
   //更新上一帧和本帧位姿
   T_last = T_now;
   T_last_ori = T_now_ori;
   // TODO
   // 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   T_now = ndt.getFinalTransformation();
-//  T_now_ori = ndt_ori.getFinalTransformation();
+  T_now_ori = ndt_ori.getFinalTransformation();
   // Transforming unfiltered, input cloud using found transform.
-  // TODO
-  // 将原始位姿作为新点云的转换，目的是为了观察位姿相同的情况下的均值方差，之后需要改回来
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud,
                            T_now);
-//  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
-//                           T_now_ori);
+  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
+                           T_now_ori);
   // 更新ndt地图
   start = clock();  //程序开始计时
   ndt.updateInputTarget(output_cloud);
@@ -191,7 +189,7 @@ void SubscribePointCloud(
   *target_cloud_update = *target_cloud_update + *output_cloud;
 
   start = clock();  //程序开始计时
-//  ndt_ori.setInputTarget(target_cloud);
+  ndt_ori.setInputTarget(target_cloud);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_mapping_time.txt",
@@ -232,33 +230,55 @@ void SubscribePointCloud(
     }
   }
   //输出某体素的单帧数据
-  if (counter == 60) {
-    int output_num = -1;
-    cout << "请输入想采集的体素在重心点云中的序号" << endl;
-    cin >> output_num;
-    const std::vector<int> voxel_centroids_leaf_indices =
-        target_cells.getVoxel_centroids_leaf_indices_();
-    int idx = voxel_centroids_leaf_indices[output_num];
-    const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr =
-        target_cells.getLeaf(idx);
-    if (leaf_ptr) {
-      const Eigen::Matrix3d cov = leaf_ptr->getCov();
-      const Eigen::Vector3d mean = leaf_ptr->getMean();
-      const std::vector<Eigen::Vector3d> vector_of_mean = leaf_ptr->getVector_of_mean();
-      const std::vector<int> vector_of_nr_points = leaf_ptr->getVector_of_nr_points();
+  if (counter == 100) {
+    int output_num = 0;
+    while (output_num != -1) {
+      cout << "请输入想采集的体素在重心点云中的序号,输入-1结束" << endl;
+      cin >> output_num;
+      std::string output_mean = "mean_of_" + std::to_string(output_num) + ".txt";
+      std::string output_nrpoints = "nrpoints_of_" + std::to_string(output_num) + ".txt";
+      std::string output_cov = "cov_of_" + std::to_string(output_num) + ".txt";
       ofstream write;
-      write.open("logfiles/mean_people.txt",
-                 ios::app);  //用ios::app不会覆盖文件内容
-      for (const auto& mean : vector_of_mean) {
-        write << setprecision(16) << mean[0] << "," << mean[1] << "," << mean[2] << endl;
-      }
+      write.open("logfiles/" + output_mean, ios::trunc);  //用ios::trunc会删除原本的东西
       write.close();
-      write.open("logfiles/nr_points_people.txt",
-                 ios::app);  //用ios::app不会覆盖文件内容
-      for (const auto& nr_points : vector_of_nr_points) {
-        write << setprecision(16) << nr_points << endl;
-      }
+      write.open("logfiles/" + output_cov, ios::trunc);  //用ios::trunc会删除原本的东西
       write.close();
+      write.open("logfiles/" + output_nrpoints, ios::trunc);  //用ios::trunc会删除原本的东西
+      write.close();
+      const std::vector<int> voxel_centroids_leaf_indices =
+          target_cells.getVoxel_centroids_leaf_indices_();
+      int idx = voxel_centroids_leaf_indices[output_num];
+      const pcl_update::VoxelGridCovariance<pcl::PointXYZ>::Leaf *leaf_ptr =
+          target_cells.getLeaf(idx);
+      if (leaf_ptr) {
+        const Eigen::Matrix3d cov = leaf_ptr->getCov();
+        const Eigen::Vector3d mean = leaf_ptr->getMean();
+        const std::vector<Eigen::Vector3d> vector_of_mean =
+            leaf_ptr->getVector_of_mean();
+        const std::vector<Eigen::Matrix3d> vector_of_cov =
+            leaf_ptr->getVector_of_cov();
+        const std::vector<int> vector_of_nr_points =
+            leaf_ptr->getVector_of_nr_points();
+        write.open("logfiles/" + output_mean,
+                   ios::app);  //用ios::app不会覆盖文件内容
+        for (const auto &mean : vector_of_mean) {
+          write << setprecision(16) << "[" << mean[0] << "," << mean[1] << ","
+                << mean[2] << "]" << "," << endl;
+        }
+        write.close();
+        write.open("logfiles/" + output_cov,
+                   ios::app);  //用ios::app不会覆盖文件内容
+        for (const auto &cov : vector_of_cov) {
+          write << setprecision(16) << cov << endl << endl;
+        }
+        write.close();
+        write.open("logfiles/" + output_nrpoints,
+                   ios::app);  //用ios::app不会覆盖文件内容
+        for (const auto &nr_points : vector_of_nr_points) {
+          write << setprecision(16) << nr_points << endl;
+        }
+        write.close();
+      }
     }
   }
 
@@ -270,15 +290,15 @@ void SubscribePointCloud(
   // pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
   //转换成ros消息的格式
-  // pcl::toROSMsg(*target_cloud, ori_output);
+  pcl::toROSMsg(*target_cloud, ori_output);
   pcl::toROSMsg(*Oc_pointcloud, update_output);
   pcl::toROSMsg(*ndt_cloud, ndt_viz);
-  ori_output.header.frame_id = "odom";
+  ori_output.header.frame_id = "map";
   update_output.header.frame_id = "odom";
   ndt_viz.header.frame_id = "ndt";
 
   //发送到output topic
-  // pub.publish(ori_output);
+  pub.publish(ori_output);
   pub.publish(update_output);
   pub.publish(ndt_viz);
   pub_ndt_msgs.publish(view_msg_array);
@@ -311,11 +331,6 @@ int main(int argc, char **argv) {
   write.close();
   write.open("logfiles/point_cloud_centroid.txt",
              ios::trunc);  //用ios::app不会覆盖文件内容
-  write.close();
-  write.open("logfiles/mean_people.txt", ios::trunc);  //用ios::trunc会删除原本的东西
-  write.close();
-  write.close();
-  write.open("logfiles/nr_points_people.txt", ios::trunc);  //用ios::trunc会删除原本的东西
   write.close();
   // Setting scale dependent NDT parameters
   // Setting minimum transformation difference for termination condition.
