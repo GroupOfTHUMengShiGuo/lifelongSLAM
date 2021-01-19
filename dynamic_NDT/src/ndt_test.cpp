@@ -264,7 +264,7 @@ void SubscribePointCloud(
     }
   }
   //输出某体素的单帧数据
-  if (counter == 100) {
+  if (counter == 50) {
     int output_num = 0;
     while (output_num != -1) {
       cout << "请输入想采集的体素在重心点云中的序号,输入-1结束" << endl;
@@ -272,6 +272,7 @@ void SubscribePointCloud(
       std::string output_mean = "mean_of_" + std::to_string(output_num) + ".txt";
       std::string output_nrpoints = "nrpoints_of_" + std::to_string(output_num) + ".txt";
       std::string output_cov = "cov_of_" + std::to_string(output_num) + ".txt";
+      std::string output_pc = "pc_of_" + std::to_string(output_num) + ".pcd";
       ofstream write;
       write.open("logfiles/" + output_mean, ios::trunc);  //用ios::trunc会删除原本的东西
       write.close();
@@ -293,11 +294,13 @@ void SubscribePointCloud(
             leaf_ptr->getVector_of_cov();
         const std::vector<int> vector_of_nr_points =
             leaf_ptr->getVector_of_nr_points();
+        const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> vector_of_pc =
+            leaf_ptr->getVector_of_pc();
         write.open("logfiles/" + output_mean,
                    ios::app);  //用ios::app不会覆盖文件内容
         for (const auto &mean : vector_of_mean) {
-          write << setprecision(16) << "[" << mean[0] << "," << mean[1] << ","
-                << mean[2] << "]" << "," << endl;
+          write << setprecision(16) << mean[0] << " " << mean[1] << " "
+                << mean[2] << endl;
         }
         write.close();
         write.open("logfiles/" + output_cov,
@@ -312,6 +315,19 @@ void SubscribePointCloud(
           write << setprecision(16) << nr_points << endl;
         }
         write.close();
+        std::string accumulate_pc_files = "logfiles/accumulate_pc/" + std::to_string(output_num);
+        std::string single_pc_files = "logfiles/single_pc/" + std::to_string(output_num);
+        mkdir(accumulate_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+        mkdir(single_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
+        for (int i = 0; i < vector_of_pc.size(); i++) {
+          const auto &pc_single = vector_of_pc[i];
+          std::string num_of_single_pc = "single_pc_of_" + std::to_string(i) + ".pcd";
+          std::string num_of_accumulate_pc = "accumulate_pc_of_" + std::to_string(i) + ".pcd";
+          *pc += *pc_single;
+          pcl::io::savePCDFileASCII (accumulate_pc_files + '/' + num_of_accumulate_pc, *pc);
+          pcl::io::savePCDFileASCII (single_pc_files + '/' + num_of_single_pc, *pc_single);
+        }
       }
     }
   }

@@ -194,6 +194,13 @@ class VoxelGridCovariance : public pcl::VoxelGrid<PointT>
         {
           return (vector_of_nr_points_);
         }
+        /** \brief 获得本voxel的单帧点云的向量.
+         * \return vector_of_pc
+         */
+        const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>
+        getVector_of_pc() const {
+          return (vector_of_pc);
+        }
         /** \brief 设置本voxel的Oc值.
           * \return Oc
           */
