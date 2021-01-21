@@ -82,7 +82,7 @@ Registration<PointSource, PointTarget, Scalar>::initCompute()
 
   // Only update target kd-tree if a new target cloud was set
   if (target_cloud_updated_ && !force_no_recompute_) {
-    //tree_->setInputCloud(target_);
+    tree_->setInputCloud(target_);
     target_cloud_updated_ = false;
   }
 
@@ -144,7 +144,7 @@ Registration<PointSource, PointTarget, Scalar>::getFitnessScore(double max_range
 
   // For each point in the source dataset
   int nr = 0;
-  tree_->setInputCloud(target_);
+  //tree_->setInputCloud(target_);
   for (const auto& point : input_transformed) {
     // Find its nearest neighbor in the target
     tree_->nearestKSearch(point, 1, nn_indices, nn_dists);

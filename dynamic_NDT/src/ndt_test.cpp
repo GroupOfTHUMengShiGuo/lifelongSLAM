@@ -102,7 +102,7 @@ void SubscribePointCloud(
     *target_cloud_update = *input_cloud;
     // 设置初始要建立ndt地图的点云.
     ndt.updateInputTarget(target_cloud_update);
-//    ndt_ori.setInputTarget(target_cloud);
+    ndt_ori.setInputTarget(target_cloud);
     return;
   }
   // Filtering input scan to roughly 10% of original size to increase speed of
@@ -122,22 +122,22 @@ void SubscribePointCloud(
   //将要加入结果点云的数据进行降采样
   approximate_voxel_filter.setLeafSize(0.01, 0.01, 0.01);
   approximate_voxel_filter.filter(*filtered_cloud_update);
-//  approximate_voxel_filter.filter(*filtered_cloud_ori);
+  approximate_voxel_filter.filter(*filtered_cloud_ori);
   std::cout << "Filtered cloud contains " << filtered_cloud_update->size()
             << " data points from room_scan2.pcd" << std::endl;
   // Setting point cloud to be aligned.
   ndt.setInputSource(filtered_cloud);
-//  ndt_ori.setInputSource(filtered_cloud);
+  ndt_ori.setInputSource(filtered_cloud);
   //按照匀速模型设置初始位姿
   Eigen::Matrix4f init_guess = T_now * T_last.inverse() * T_now;
-//  Eigen::Matrix4f init_guess_ori = T_now_ori * T_last_ori.inverse() * T_now_ori;
+  Eigen::Matrix4f init_guess_ori = T_now_ori * T_last_ori.inverse() * T_now_ori;
 
   // Calculating required rigid transform to align the input cloud to the target
   // cloud.
   pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud(
       new pcl::PointCloud<pcl::PointXYZ>);
-//  pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ori(
-//      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ori(
+      new pcl::PointCloud<pcl::PointXYZ>);
 
   //开始匹配
   start = clock();  //程序开始计时
@@ -153,7 +153,7 @@ void SubscribePointCloud(
   // //ms为单位
 
   start = clock();  //程序开始计时
-//  ndt_ori.align(*output_cloud_ori, init_guess_ori);
+  ndt_ori.align(*output_cloud_ori, init_guess_ori);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_align_time.txt",
@@ -163,16 +163,16 @@ void SubscribePointCloud(
   // std::cout<<"ori_align time:"<<endtime*1000<<"ms"<<std::endl;
   // //ms为单位
 
-//  std::cout << "Normal Distributions Transform has converged:"
-//            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
-//            << std::endl;
-//  std::cout << "Normal Distributions Transform has converged:"
-//            << ndt_ori.hasConverged()
-//            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
-//  ori_sum = ndt_ori.getFitnessScore();
-//  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
-//                            ori_sum * 100;
-//  cout << "diff = " << diff_sum << "%" << endl;
+  std::cout << "Normal Distributions Transform has converged:"
+            << ndt.hasConverged() << " update_score: " << ndt.getFitnessScore()
+            << std::endl;
+  std::cout << "Normal Distributions Transform has converged:"
+            << ndt_ori.hasConverged()
+            << " ori_score: " << ndt_ori.getFitnessScore() << std::endl;
+  ori_sum = ndt_ori.getFitnessScore();
+  diff_sum = diff_sum + (ndt.getFitnessScore() - ndt_ori.getFitnessScore()) /
+                            ori_sum * 100;
+  cout << "diff = " << diff_sum << "%" << endl;
   //更新上一帧和本帧位姿
   T_last = T_now;
   T_last_ori = T_now_ori;
@@ -183,8 +183,8 @@ void SubscribePointCloud(
   // Transforming unfiltered, input cloud using found transform.
   pcl::transformPointCloud(*filtered_cloud_update, *output_cloud,
                            T_now);
-//  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
-//                           T_now_ori);
+  pcl::transformPointCloud(*filtered_cloud_ori, *output_cloud_ori,
+                           T_now_ori);
   // 更新ndt地图
   start = clock();  //程序开始计时
   ndt.updateInputTarget(output_cloud);
@@ -201,11 +201,11 @@ void SubscribePointCloud(
   //  pcl::io::savePCDFileASCII ("output.pcd", *output_cloud);
 
   //将转换后的地图加入到
-//  *target_cloud = *target_cloud + *output_cloud_ori;
+  *target_cloud = *target_cloud + *output_cloud_ori;
   *target_cloud_update = *target_cloud_update + *output_cloud;
 
   start = clock();  //程序开始计时
-//  ndt_ori.setInputTarget(target_cloud);
+  ndt_ori.setInputTarget(target_cloud);
   end = clock();  //程序结束计时
   endtime = (double)(end - start) / CLOCKS_PER_SEC;
   write.open("logfiles/ori_mapping_time.txt",
@@ -264,7 +264,7 @@ void SubscribePointCloud(
     }
   }
   //输出某体素的单帧数据
-  if (counter == 50) {
+  if (counter == 150) {
     int output_num = 0;
     while (output_num != -1) {
       cout << "请输入想采集的体素在重心点云中的序号,输入-1结束" << endl;
@@ -320,13 +320,20 @@ void SubscribePointCloud(
         mkdir(accumulate_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         mkdir(single_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ac(new pcl::PointCloud<pcl::PointXYZ>());
         for (int i = 0; i < vector_of_pc.size(); i++) {
           const auto &pc_single = vector_of_pc[i];
           std::string num_of_single_pc = "single_pc_of_" + std::to_string(i) + ".pcd";
           std::string num_of_accumulate_pc = "accumulate_pc_of_" + std::to_string(i) + ".pcd";
           *pc += *pc_single;
-          pcl::io::savePCDFileASCII (accumulate_pc_files + '/' + num_of_accumulate_pc, *pc);
-          pcl::io::savePCDFileASCII (single_pc_files + '/' + num_of_single_pc, *pc_single);
+          *pc_ac += *pc_single;
+          pcl::io::savePCDFileASCII(
+              accumulate_pc_files + '/' + num_of_accumulate_pc, *pc);
+          if (pc_ac->size() > 300) {
+            pcl::io::savePCDFileASCII(
+                single_pc_files + '/' + num_of_single_pc, *pc_ac);
+            pc_ac->clear();
+            }
         }
       }
     }
@@ -341,7 +348,7 @@ void SubscribePointCloud(
   // pcl::io::savePCDFileASCII ("Oc.pcd", *Oc_pointcloud);
 
   //转换成ros消息的格式
-//  pcl::toROSMsg(*target_cloud, ori_output);
+  pcl::toROSMsg(*target_cloud, ori_output);
   pcl::toROSMsg(*Oc_pointcloud, update_output);
   pcl::toROSMsg(*single_oc_pointcloud, update_single_output);
   pcl::toROSMsg(*ndt_cloud, ndt_viz);
@@ -351,7 +358,7 @@ void SubscribePointCloud(
   ndt_viz.header.frame_id = "ndt";
 
   //发送到output topic
-//  pub.publish(ori_output);
+  pub.publish(ori_output);
   pub.publish(update_output);
   pub.publish(update_single_output);
   pub.publish(ndt_viz);
@@ -390,17 +397,17 @@ int main(int argc, char **argv) {
   // Setting scale dependent NDT parameters
   // Setting minimum transformation difference for termination condition.
   ndt.setTransformationEpsilon(0.01);
-//  ndt_ori.setTransformationEpsilon(0.01);
+  ndt_ori.setTransformationEpsilon(0.01);
   // Setting maximum step size for More-Thuente line search.
   ndt.setStepSize(0.1);
-//  ndt_ori.setStepSize(0.1);
+  ndt_ori.setStepSize(0.1);
   // Setting Resolution of NDT grid structure (VoxelGridCovariance).
   ndt.setResolution(1.0);
-//  ndt_ori.setResolution(1.0);
+  ndt_ori.setResolution(1.0);
 
   // Setting max number of registration iterations.
   ndt.setMaximumIterations(60);
-//  ndt_ori.setMaximumIterations(60);
+  ndt_ori.setMaximumIterations(60);
   // ros部分
   ros::init(argc, argv, "point_cloud_subscriber");
   ros::NodeHandle node_handle;

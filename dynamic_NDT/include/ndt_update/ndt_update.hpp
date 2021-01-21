@@ -404,8 +404,8 @@ template<typename PointSource, typename PointTarget> void
 NormalDistributionsTransform<PointSource, PointTarget>::updateHessian (Eigen::Matrix<double, 6, 6> &hessian, const Eigen::Vector3d &x_trans, const Eigen::Matrix3d &c_inv, const double Oc) const
 {
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  double e_x_cov_x = Oc * gauss_d2_ * std::exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2); //加入Oc的匹配
-//  double e_x_cov_x = gauss_d2_ * std::exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2);
+//  double e_x_cov_x = Oc * gauss_d2_ * std::exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2); //加入Oc的匹配
+  double e_x_cov_x = gauss_d2_ * std::exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2);
   // Error checking for invalid values.
   if (e_x_cov_x > 1 || e_x_cov_x < 0 || std::isnan(e_x_cov_x))
   {

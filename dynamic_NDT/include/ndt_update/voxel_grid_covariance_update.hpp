@@ -266,7 +266,7 @@ pcl_update::VoxelGridCovariance<PointT>::getDistplayOcPointCloud (pcl::PointClou
     for (const auto& pc : leaf.vector_of_pc) {
       for (const auto &point : *(pc)) {
         // point.intensity = leaf.getOc();
-        displaypointcloud->push_back(pcl::PointXYZI(point.x, point.y, point.z, Oc));
+        displaypointcloud->push_back(pcl::PointXYZI(point.x, point.y, point.z, 1));
       }
     }
   }
