@@ -442,7 +442,11 @@ pcl_update::VoxelGridCovariance<PointT>::addLeavesCurrToLeaves (const std::map<s
 
 
     // Single pass covariance calculation
-    if (leaf.nr_points > 0 && leaf_curr.nr_points > 0) {
+    if (leaf.nr_points == 0 && leaf_curr.nr_points >1) {
+      //为了和库中保持一致
+      leaf.cov_ += leaf_curr.cov_ + Eigen::Matrix3d::Identity() / (leaf_curr.nr_points -1);
+    }
+    else if (leaf.nr_points > 0 && leaf_curr.nr_points > 0) {
       const double factorOfcov_ = 1.0 * (leaf.nr_points - 1) / (nr_pointsNow - 1);
       const double factorOfcov_curr = 1.0 * (leaf_curr.nr_points - 1) / (nr_pointsNow - 1);
       const double factorOfmean = 1.0 * leaf_curr.nr_points * leaf.nr_points /

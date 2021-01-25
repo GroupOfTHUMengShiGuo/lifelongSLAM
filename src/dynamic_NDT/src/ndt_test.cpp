@@ -81,13 +81,15 @@ void SubscribePointCloud(
     }
   }
   counter++;
-  // 进行统计滤波去除离群点
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-  sor.setInputCloud(input_cloud_ori);
-  sor.setMeanK(50);
-  sor.setStddevMulThresh(1);
-  sor.setNegative(false);
-  sor.filter(*input_cloud);
+  // 预处理进行统计滤波去除离群点
+//  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+//  sor.setInputCloud(input_cloud_ori);
+//  sor.setMeanK(25);
+//  sor.setStddevMulThresh(1.5);
+//  sor.setNegative(false);
+//  sor.filter(*input_cloud);
+//  不进行预处理
+  *input_cloud = *input_cloud_ori;
   // Loading first scan of room.
   if (input_cloud->empty()) {
     // /media/zxd/60787A51787A25C6/pcl_ndt/PointCloud/bin2pcd/velodyne/pcd/1025/
@@ -122,7 +124,8 @@ void SubscribePointCloud(
   //将要加入结果点云的数据进行降采样
   approximate_voxel_filter.setLeafSize(0.01, 0.01, 0.01);
   approximate_voxel_filter.filter(*filtered_cloud_update);
-  approximate_voxel_filter.filter(*filtered_cloud_ori);
+  //approximate_voxel_filter.filter(*filtered_cloud_ori);
+  *filtered_cloud_ori = *filtered_cloud_update;
   std::cout << "Filtered cloud contains " << filtered_cloud_update->size()
             << " data points from room_scan2.pcd" << std::endl;
   // Setting point cloud to be aligned.
