@@ -322,20 +322,22 @@ void SubscribePointCloud(
         std::string single_pc_files = "logfiles/single_pc/" + std::to_string(output_num);
         mkdir(accumulate_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         mkdir(single_pc_files.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ac(new pcl::PointCloud<pcl::PointXYZ>());
+        pcl::PointCloud<pcl::PointXYZI>::Ptr pc(new pcl::PointCloud<pcl::PointXYZI>());
+        pcl::PointCloud<pcl::PointXYZI>::Ptr pc_ac(new pcl::PointCloud<pcl::PointXYZI>());
         for (int i = 0; i < vector_of_pc.size(); i++) {
           const auto &pc_single = vector_of_pc[i];
           std::string num_of_single_pc = "single_pc_of_" + std::to_string(i) + ".pcd";
           std::string num_of_accumulate_pc = "accumulate_pc_of_" + std::to_string(i) + ".pcd";
-          *pc += *pc_single;
-          *pc_ac += *pc_single;
+          for (const auto &point : *(pc_single)) {
+            pc_ac->push_back(pcl::PointXYZI(point.x, point.y, point.z, i));
+            pc->push_back(pcl::PointXYZI(point.x, point.y, point.z, i));
+          }
           pcl::io::savePCDFileASCII(
-              accumulate_pc_files + '/' + num_of_accumulate_pc, *pc);
-          if (pc_ac->size() > 300) {
+              accumulate_pc_files + '/' + num_of_accumulate_pc, *pc_ac);
+          if (pc->size() > 300) {
             pcl::io::savePCDFileASCII(
-                single_pc_files + '/' + num_of_single_pc, *pc_ac);
-            pc_ac->clear();
+                single_pc_files + '/' + num_of_single_pc, *pc);
+            pc->clear();
             }
         }
       }
